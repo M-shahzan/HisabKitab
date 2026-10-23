@@ -20,6 +20,7 @@ import { ttsService } from "@/services/tts-service";
 import { deductStockForSale } from "@/services/stock-service";
 import { recordNewTransaction } from "@/services/summary-service";
 import { multiplyMoney, sumMoney } from "@/lib/formatters";
+import { SAMPLE_VOICE_SCRIPTS, SAMPLE_VOICE_SCRIPTS_BY_LANG } from "@/lib/mock-data";
 
 export type SupportedLanguage = "en" | "hi" | "kn" | "ur";
 
@@ -43,6 +44,8 @@ export function useVoiceBilling() {
   const [confirmedSale, setConfirmedSale] = useState<ConfirmSaleResponse | null>(null);
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "khata">("cash");
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState<boolean>(false);
+  const speechRecRef = useRef<any>(null);
+  const lastRecognizedTextRef = useRef<string>("");
 
   // Active voice language (synced with settings and persisted)
   const [selectedLanguage, setSelectedLanguageState] = useState<SupportedLanguage>(() => {
@@ -109,6 +112,37 @@ export function useVoiceBilling() {
     setErrorMessage(null);
     ttsService.stop();
     setIsSpeaking(false);
+    lastRecognizedTextRef.current = "";
+
+    // Start browser SpeechRecognition in parallel if available as live backup
+    if (typeof window !== "undefined") {
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          if (speechRecRef.current) {
+            try {
+              speechRecRef.current.stop();
+            } catch {}
+          }
+          const rec = new SpeechRec();
+          rec.lang = LANG_TTS_CODE[selectedLanguage] || "hi-IN";
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.onresult = (e: any) => {
+            let t = "";
+            for (let i = 0; i < e.results.length; i++) {
+              t += e.results[i][0].transcript + " ";
+            }
+            if (t.trim()) lastRecognizedTextRef.current = t.trim();
+          };
+          rec.onerror = () => {};
+          rec.start();
+          speechRecRef.current = rec;
+        } catch (e) {
+          console.warn("Browser SpeechRecognition backup not started:", e);
+        }
+      }
+    }
 
     try {
       setState("listening");
@@ -129,7 +163,7 @@ export function useVoiceBilling() {
       );
       setAudioLevel(0);
     }
-  }, [state]);
+  }, [state, selectedLanguage]);
 
   /**
    * Stop recording and send audio blob to POST /voice
@@ -140,6 +174,13 @@ export function useVoiceBilling() {
     setState("processing");
     setAudioLevel(0);
     setErrorMessage(null);
+
+    if (speechRecRef.current) {
+      try {
+        speechRecRef.current.stop();
+      } catch {}
+      speechRecRef.current = null;
+    }
 
     try {
       const audioBlob = await audioRecorder.stop();
@@ -155,6 +196,37 @@ export function useVoiceBilling() {
       handleVoiceResponse(response, selectedLanguage);
     } catch (err: any) {
       audioRecorder.cancel();
+
+      // Gracefully handle backend STT unavailability (e.g. missing STT_API_KEY)
+      const errorMsg = String(err?.message || "");
+      const isSttMissing =
+        errorMsg.includes("STT_API_KEY") ||
+        errorMsg.includes("Transcription") ||
+        err?.status === 400 ||
+        err?.status === 502;
+
+      if (isSttMissing) {
+        console.warn(
+          "Backend cloud STT unavailable; falling back to local speech recognition:",
+          err?.message
+        );
+        try {
+          const heard = lastRecognizedTextRef.current.trim();
+          const fallbackText =
+            heard ||
+            (SAMPLE_VOICE_SCRIPTS_BY_LANG[selectedLanguage] || SAMPLE_VOICE_SCRIPTS)[0].text;
+          const fallbackRes = await parseTranscriptFallback(
+            fallbackText,
+            billId || undefined,
+            selectedLanguage
+          );
+          handleVoiceResponse(fallbackRes, selectedLanguage);
+          return;
+        } catch (fbErr: any) {
+          console.error("Local fallback parsing failed:", fbErr);
+        }
+      }
+
       setState("error");
       setErrorMessage(
         err?.message || "Failed to process audio with server. Please try speaking again."
