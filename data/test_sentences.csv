@@ -1,1 +1,47 @@
 id,sentence,expected_items,expected_qty,expected_unit,category
+TC01,ಎರಡು ಕೆಜಿ ಈರುಳ್ಳಿ ಕೊಡಿ,onion,2,kg,single_item
+TC02,ಒಂದು ಲೀಟರ್ ಸೂರ್ಯಕಾಂತಿ ಎಣ್ಣೆ,cooking_oil,1,litre,single_item
+TC03,दो किलो प्याज़,onion,2,kg,single_item
+TC04,आधा किलो हरी मिर्च,green_chilli,0.5,kg,single_item
+TC05,Five kg sona masoori rice,rice,5,kg,single_item
+TC06,Two packets Nandini milk,milk,2,packet,single_item
+TC07,ಒಂದು ಕೆಜಿ tomato ಹಾಕಿ,tomato,1,kg,single_item
+TC08,Do packet bread dena,bread,2,packet,single_item
+TC09,"ಎರಡು ಕೆಜಿ ಈರುಳ್ಳಿ, ಒಂದು ಕೆಜಿ ಆಲೂಗಡ್ಡೆ ಮತ್ತು ಅರ್ಧ ಕೆಜಿ ಟೊಮೆಟೊ",onion|potato|tomato,2|1|0.5,kg|kg|kg,multi_item
+TC10,ಮೂರು ಕೆಜಿ ಅಕ್ಕಿ ಮತ್ತೆ ಒಂದು ಪ್ಯಾಕೆಟ್ ಉಪ್ಪು,rice|salt,3|1,kg|packet,multi_item
+TC11,"दो किलो आलू, एक किलो टमाटर, ढाई सौ ग्राम अदरक",potato|tomato|ginger,2|1|250,kg|kg|g,multi_item
+TC12,पांच किलो आटा और एक लीटर तेल,atta|cooking_oil,5|1,kg|litre,multi_item
+TC13,"Two kg onion, one kg potato, and half kg carrot",onion|potato|carrot,2|1|0.5,kg|kg|kg,multi_item
+TC14,One dozen eggs and two packets milk,egg|milk,1|2,dozen|packet,multi_item
+TC15,"Two kg rice, one oil, 500 gram sakkare",rice|cooking_oil|sugar,2|1|500,kg|litre|g,multi_item
+TC16,"Ek kilo alugadde, do kilo eerulli, aur ek packet salt",potato|onion|salt,1|2|1,kg|kg|packet,multi_item
+TC17,ಒಂದು ಲೀಟರ್ ಎಣ್ಣೆ ನೂರೈವತ್ತು ರೂಪಾಯಿ,cooking_oil,1,litre,spoken_price
+TC18,दो किलो सेब तीन सौ रुपये,apple,2,kg,spoken_price
+TC19,One kg tomato at 35 rupees,tomato,1,kg,spoken_price
+TC20,Two kilo beans 60 rupees rate,beans,2,kg,spoken_price
+TC21,ಟೊಮೆಟೊ ಬೆಲೆ ನಲವತ್ತು ರೂಪಾಯಿ ಮಾಡಿ,UPDATE_PRICE:tomato,40,rupees,permanent_price_update
+TC22,Tomato price 40 rupees set karo,UPDATE_PRICE:tomato,40,rupees,permanent_price_update
+TC23,ಅಕ್ಕಿ ಮೂರು ಕೆಜಿ ಮಾಡಿ,EDIT_QTY:rice,3,kg,edit_quantity
+TC24,प्याज़ तीन किलो कर दो,EDIT_QTY:onion,3,kg,edit_quantity
+TC25,Make rice three kg,EDIT_QTY:rice,3,kg,edit_quantity
+TC26,Sugar change to 1 kg,EDIT_QTY:sugar,1,kg,edit_quantity
+TC27,ಸಕ್ಕರೆ ಬೇಡ ತೆಗೆದುಹಾಕಿ,REMOVE_ITEM:sugar,0,item,remove_item
+TC28,चीनी हटा दो,REMOVE_ITEM:sugar,0,item,remove_item
+TC29,Remove sugar from bill,REMOVE_ITEM:sugar,0,item,remove_item
+TC30,Oil cancel maadi,REMOVE_ITEM:cooking_oil,0,item,remove_item
+TC31,ಹೌದು ಬಿಲ್ ಸೇವ್ ಮಾಡಿ,CONFIRM_BILL,,,confirmation
+TC32,हाँ ठीक है बिल पक्का करो,CONFIRM_BILL,,,confirmation
+TC33,Yes confirm and save,CONFIRM_BILL,,,confirmation
+TC34,ಬೇಡ ಬಿಲ್ ರದ್ದು ಮಾಡಿ,CANCEL_BILL,,,cancellation
+TC35,Cancel the bill,CANCEL_BILL,,,cancellation
+TC36,ಅಕ್ಕಿ ಎಷ್ಟು ಉಳಿದಿದೆ?,QUERY_STOCK:rice,,,stock_query
+TC37,दाल का स्टॉक कितना है?,QUERY_STOCK:toor_dal,,,stock_query
+TC38,How much sugar is left in stock?,QUERY_STOCK:sugar,,,stock_query
+TC39,ಇವತ್ತಿನ ವ್ಯಾಪಾರ ಎಷ್ಟು ಆಗಿದೆ?,QUERY_DAILY_SALES,,,daily_query
+TC40,आज का टोटल बिक्री कितना हुआ?,QUERY_DAILY_SALES,,,daily_query
+TC41,What is today's total sales?,QUERY_DAILY_SALES,,,daily_query
+TC42,ಒಂದು ಕಟ್ಟು ಕೊತ್ತಂಬರಿ ಸೊಪ್ಪು,coriander,1,bunch,local_slang_unit
+TC43,पाव किलो लहसुन,garlic,250,g,local_slang_unit
+TC44,Two dragonfruit ಕೊಡಿ,UNKNOWN:dragonfruit,2,piece,edge_case_unknown_item
+TC45,Give me two onions,onion,2,MISSING_UNIT,edge_case_missing_unit
+TC46,ಹ್ಮ್ಮ್ ಅಕ್ಕಿ ಎರಡು ಕೆಜಿ ಅಲ್ಲಲ್ಲ ಮೂರು ಕೆಜಿ ಹಾಕಿ,rice,3,kg,edge_case_self_correction
