@@ -295,11 +295,14 @@ export function useVoiceBilling() {
     ttsService.stop();
     setIsSpeaking(false);
 
-    // Ensure a bill_id exists (use active bill_id or generate a temporary one if offline)
-    const effectiveBillId = billId || `b_${Date.now().toString(36)}`;
+    if (!billId) {
+      setErrorMessage("No active draft bill to confirm. Please create a draft bill first.");
+      setState("review");
+      return null;
+    }
 
     try {
-      const response: ConfirmApiResponse = await confirmBill(effectiveBillId);
+      const response: ConfirmApiResponse = await confirmBill(billId);
 
       // Extract low stock warnings if any
       const lowStockList = response.low_stock || [];
@@ -307,7 +310,7 @@ export function useVoiceBilling() {
 
       const saleReceipt: ConfirmSaleResponse = {
         success: true,
-        billNumber: String(response.sale_id || response.billNumber || effectiveBillId),
+        billNumber: String(response.sale_id || response.billNumber || billId),
         transactionId: `txn-${Date.now()}`,
         total: response.total ?? total,
         itemCount: items.length,

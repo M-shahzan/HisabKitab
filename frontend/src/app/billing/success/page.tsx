@@ -80,7 +80,6 @@ export default function SaleSuccessPage() {
       } catch {
         router.push("/");
       }
-    } else {
       // If user directly opened without confirmed sale, provide realistic mock for demonstration & testing
       setSale({
         success: true,

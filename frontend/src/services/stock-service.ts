@@ -1,9 +1,8 @@
 import { BackendStockItem, Product, ProductFormData } from "@/types/product";
-import { INITIAL_PRODUCTS } from "@/lib/mock-data";
 import { apiFetch } from "./api-client";
 
-// In-memory inventory state for development fallback
-let localStoreFallback: Product[] = [...INITIAL_PRODUCTS];
+// In-memory catalog cache for local edits during session
+let localCatalogCache: Product[] = [];
 
 /**
  * GET /stock
@@ -11,42 +10,26 @@ let localStoreFallback: Product[] = [...INITIAL_PRODUCTS];
  * Returns array of { item_id, name, quantity, unit } mapped to Product.
  */
 export async function fetchStock(): Promise<Product[]> {
-  try {
-    const backendItems = await apiFetch<BackendStockItem[]>("/stock");
+  const backendItems = await apiFetch<BackendStockItem[]>("/stock");
 
-    if (Array.isArray(backendItems) && backendItems.length > 0) {
-      return backendItems.map((item) => {
-        // Find existing mock metadata (category, price, hindiName) if matching
-        const existing = INITIAL_PRODUCTS.find(
-          (p) => p.name.toLowerCase() === item.name.toLowerCase() || p.id === `prod-${item.item_id}`
-        );
-
-        return {
-          id: `item-${item.item_id}`,
-          itemId: item.item_id,
-          name: item.name,
-          hindiName: existing?.hindiName,
-          category: existing?.category || "General Grocery",
-          unit: item.unit || "packet",
-          price: existing?.price || 0,
-          stockQuantity: Number(item.quantity) || 0,
-          lowStockThreshold: existing?.lowStockThreshold || 10,
-          aliases: existing?.aliases || [],
-        };
-      });
-    }
-
-    // If server returned an empty list (e.g. database unseeded), return empty array
-    if (Array.isArray(backendItems)) {
-      return [];
-    }
-
-    return [];
-  } catch (err: any) {
-    console.warn("Backend /stock fetch failed, falling back to local dataset:", err?.message);
-    // Return local dataset for standalone UI testing
-    return [...localStoreFallback];
+  if (Array.isArray(backendItems) && backendItems.length > 0) {
+    const products: Product[] = backendItems.map((item) => ({
+      id: `item-${item.item_id}`,
+      itemId: item.item_id,
+      name: item.name,
+      category: "General Grocery",
+      unit: item.unit || "packet",
+      price: 0,
+      stockQuantity: Number(item.quantity) || 0,
+      lowStockThreshold: 10,
+      aliases: [],
+    }));
+    localCatalogCache = products;
+    return products;
   }
+
+  localCatalogCache = [];
+  return [];
 }
 
 /**
@@ -54,7 +37,7 @@ export async function fetchStock(): Promise<Product[]> {
  */
 export async function addProductRemote(data: ProductFormData): Promise<Product> {
   const newProduct: Product = {
-    id: `prod-${Date.now()}`,
+    id: `item-${Date.now()}`,
     name: data.name,
     category: data.category,
     unit: data.unit,
@@ -64,27 +47,27 @@ export async function addProductRemote(data: ProductFormData): Promise<Product> 
     aliases: data.aliases ? data.aliases.split(",").map((s) => s.trim().toLowerCase()) : [],
   };
 
-  localStoreFallback = [newProduct, ...localStoreFallback];
+  localCatalogCache = [newProduct, ...localCatalogCache];
   return newProduct;
 }
 
 export async function updateProductRemote(id: string, updates: Partial<Product>): Promise<Product> {
-  const index = localStoreFallback.findIndex((p) => p.id === id);
+  const index = localCatalogCache.findIndex((p) => p.id === id);
   if (index !== -1) {
-    localStoreFallback[index] = { ...localStoreFallback[index], ...updates };
-    return localStoreFallback[index];
+    localCatalogCache[index] = { ...localCatalogCache[index], ...updates };
+    return localCatalogCache[index];
   }
   return { id, name: "Product", category: "General Grocery", unit: "packet", price: 0, stockQuantity: 0, lowStockThreshold: 10, ...updates };
 }
 
 export async function deleteProductRemote(id: string): Promise<boolean> {
-  localStoreFallback = localStoreFallback.filter((p) => p.id !== id);
+  localCatalogCache = localCatalogCache.filter((p) => p.id !== id);
   return true;
 }
 
 export async function deductStockForSale(items: Array<{ productId: string; quantity: number }>): Promise<void> {
   for (const item of items) {
-    const p = localStoreFallback.find((prod) => prod.id === item.productId);
+    const p = localCatalogCache.find((prod) => prod.id === item.productId || `item-${prod.itemId}` === item.productId);
     if (p) {
       p.stockQuantity = Math.max(0, p.stockQuantity - item.quantity);
     }

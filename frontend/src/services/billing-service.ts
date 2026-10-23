@@ -30,6 +30,7 @@ export function mapBackendLineToBillItem(line: BackendBillLine, idx: number): Bi
 /**
  * POST /voice
  * Sends recorded audio blob to backend speech recognition & billing pipeline
+ * Matches FastAPI endpoint fields: audio (UploadFile), bill_id (Form str), language (Form str)
  */
 export async function sendVoiceAudio(
   audioBlob: Blob,
@@ -37,7 +38,7 @@ export async function sendVoiceAudio(
   language: string = "hi"
 ): Promise<VoiceApiResponse> {
   const formData = new FormData();
-  formData.append("file", audioBlob, "recording.webm");
+  formData.append("audio", audioBlob, "recording.webm");
 
   if (billId) {
     formData.append("bill_id", billId);
@@ -46,20 +47,14 @@ export async function sendVoiceAudio(
     formData.append("language", language);
   }
 
-  try {
-    return await apiFetch<VoiceApiResponse>("/voice", {
-      method: "POST",
-      body: formData,
-    });
-  } catch (err: any) {
-    // If backend is unavailable, provide helpful development fallback with explicit notice
-    console.warn("Backend /voice unavailable, using development fallback:", err?.message);
-    return getOfflineVoiceFallback(billId, language);
-  }
+  return await apiFetch<VoiceApiResponse>("/voice", {
+    method: "POST",
+    body: formData,
+  });
 }
 
 /**
- * Fallback parser for text transcripts (used for manual text corrections or demo presets)
+ * Direct transcript processing requires speech audio for backend pipeline
  */
 export async function parseTranscriptFallback(
   text: string,
@@ -247,17 +242,10 @@ export async function confirmBill(billId: string): Promise<ConfirmApiResponse> {
     throw new Error("Cannot confirm sale: Missing valid draft bill ID.");
   }
 
-  try {
-    return await apiFetch<ConfirmApiResponse>("/confirm", {
-      method: "POST",
-      body: JSON.stringify({ bill_id: billId }),
-    });
-  } catch (err: any) {
-    // If backend is unavailable, report clear offline error without faking a saved database sale
-    throw new Error(
-      `Confirmation failed: ${err?.message || "Backend /confirm endpoint unreachable"}. The sale was not recorded.`
-    );
-  }
+  return await apiFetch<ConfirmApiResponse>("/confirm", {
+    method: "POST",
+    body: JSON.stringify({ bill_id: billId }),
+  });
 }
 
 /**
@@ -269,15 +257,10 @@ export async function cancelBill(billId: string): Promise<CancelApiResponse> {
     return { ok: true };
   }
 
-  try {
-    return await apiFetch<CancelApiResponse>("/cancel", {
-      method: "POST",
-      body: JSON.stringify({ bill_id: billId }),
-    });
-  } catch (err: any) {
-    console.warn("Backend /cancel failed, proceeding with local reset:", err?.message);
-    return { ok: true, message: "Draft cleared locally." };
-  }
+  return await apiFetch<CancelApiResponse>("/cancel", {
+    method: "POST",
+    body: JSON.stringify({ bill_id: billId }),
+  });
 }
 
 /**
@@ -297,45 +280,4 @@ export async function sendCorrection(
     console.warn("Failed to record correction on backend:", err?.message);
     return { ok: false };
   }
-}
-
-/**
- * Offline simulation fallback with mock voice script when server is offline
- */
-function getOfflineVoiceFallback(billId?: string, language: string = "en"): VoiceApiResponse {
-  const langKey = (["en", "hi", "kn", "ur"].includes(language) ? language : "en") as "en" | "hi" | "kn" | "ur";
-  const scripts = SAMPLE_VOICE_SCRIPTS_BY_LANG[langKey] || SAMPLE_VOICE_SCRIPTS;
-  const sample = scripts[0];
-  const lines: BackendBillLine[] = sample.items.map((item, idx) => ({
-    item_id: idx + 1,
-    name: item.productName,
-    qty: item.quantity,
-    unit: item.unit,
-    unit_price: item.unitPrice,
-    amount: item.quantity * item.unitPrice,
-  }));
-
-  const total = lines.reduce((acc, l) => acc + l.amount, 0);
-  const draftId = billId || `b_${Math.random().toString(36).substring(2, 8)}`;
-
-  let readback = `Total is ${total} rupees. Offline preview mode.`;
-  if (language === "hi") {
-    readback = `कुल बिल ${total} रुपये है। ऑफलाइन पूर्वावलोकन।`;
-  } else if (language === "kn") {
-    readback = `ಒಟ್ಟು ಬಿಲ್ ${total} ರೂಪಾಯಿಗಳು. ಆಫ್‌ಲೈನ್ ಪೂರ್ವವೀಕ್ಷಣೆ.`;
-  } else if (language === "ur") {
-    readback = `کل بل ${total} روپے ہے۔ آف لائن پیش منظر۔`;
-  }
-
-  return {
-    transcript: sample.text,
-    intent: "new_sale",
-    bill: {
-      bill_id: draftId,
-      lines,
-      total,
-      status: "draft",
-    },
-    message: readback,
-  };
 }

@@ -222,6 +222,17 @@ export default function NewOrderPage() {
             </div>
           </div>
 
+          {/* Spoken Voice Guidance Hints */}
+          <div className="mb-4 flex flex-wrap items-center gap-2 justify-center text-center">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <Volume2 className="h-3.5 w-3.5 text-emerald-600" />
+              Voice Guide:
+            </span>
+            <span className="text-xs text-slate-600">
+              Speak naturally e.g. &ldquo;Do kilo chawal, ek kilo cheeni&rdquo; or &ldquo;Ek litre sarson tel&rdquo;
+            </span>
+          </div>
+
           {/* Central Microphone Button (MediaRecorder) */}
           <MicrophoneButton
             state={state}
