@@ -8,7 +8,7 @@ import {
 } from "@/types/billing";
 import { UnitOfMeasure } from "@/types/product";
 import { apiFetch, ApiError } from "./api-client";
-import { INITIAL_PRODUCTS, SAMPLE_VOICE_SCRIPTS } from "@/lib/mock-data";
+import { INITIAL_PRODUCTS, SAMPLE_VOICE_SCRIPTS, SAMPLE_VOICE_SCRIPTS_BY_LANG } from "@/lib/mock-data";
 import { multiplyMoney } from "@/lib/formatters";
 
 /**
@@ -63,74 +63,166 @@ export async function sendVoiceAudio(
  */
 export async function parseTranscriptFallback(
   text: string,
-  billId?: string
+  billId?: string,
+  language: string = "hi"
 ): Promise<VoiceApiResponse> {
   // Try sending as audio blob or simulated payload if backend supports text
   try {
-    // First try a FormData upload with a text note or wav header
     const blob = new Blob([text], { type: "text/plain" });
     const formData = new FormData();
     formData.append("file", blob, "transcript.txt");
     if (billId) formData.append("bill_id", billId);
+    if (language) formData.append("language", language);
 
     return await apiFetch<VoiceApiResponse>("/voice", {
       method: "POST",
       body: formData,
     });
   } catch {
-    // Local NLP simulation matching catalogue
+    // Local NLP simulation matching catalogue across languages
     const lower = text.toLowerCase();
-    const matchedSample =
-      SAMPLE_VOICE_SCRIPTS.find((s) => lower.includes(s.title.toLowerCase())) ||
-      SAMPLE_VOICE_SCRIPTS[0];
-
     const lines: BackendBillLine[] = [];
-    if (lower.includes("rice") || lower.includes("chawal")) {
+
+    // Helper to extract quantity
+    const has5 = lower.includes("5") || lower.includes("five") || lower.includes("paanch") || lower.includes("पांच") || lower.includes("ಐದು") || lower.includes("پانچ");
+    const has1 = lower.includes("1") || lower.includes("one") || lower.includes("ek") || lower.includes("एक") || lower.includes("ಒಂದು") || lower.includes("ایک");
+    const hasHalf = lower.includes("half") || lower.includes("0.5") || lower.includes("aadha") || lower.includes("adha") || lower.includes("आधा") || lower.includes("ಅರ್ಧ") || lower.includes("آدھا");
+    const has4 = lower.includes("4") || lower.includes("four") || lower.includes("chaar") || lower.includes("चार") || lower.includes("ನಾಲ್ಕು") || lower.includes("چار");
+
+    // 1. Rice (Hindi: चावल, Kannada: ಅಕ್ಕಿ, Urdu: چاول)
+    if (lower.includes("rice") || lower.includes("chawal") || lower.includes("चावल") || lower.includes("akki") || lower.includes("ಅಕ್ಕಿ") || lower.includes("چاول") || lower.includes("bhaat")) {
+      const qty = has5 ? 5 : has1 ? 1 : 2;
       lines.push({
         item_id: 1,
-        name: "Basmati Rice Premium",
-        qty: lower.includes("5") ? 5 : lower.includes("1") ? 1 : 2,
+        name: "Daawat Rozana Basmati Rice",
+        qty,
         unit: "kg",
-        unit_price: 65,
-        amount: (lower.includes("5") ? 5 : lower.includes("1") ? 1 : 2) * 65,
-      });
-    }
-    if (lower.includes("oil") || lower.includes("tel")) {
-      lines.push({
-        item_id: 2,
-        name: "Fortune Sunflower Oil",
-        qty: 1,
-        unit: "litre",
-        unit_price: 140,
-        amount: 140,
-      });
-    }
-    if (lower.includes("sugar") || lower.includes("cheeni") || lower.includes("shakkar")) {
-      lines.push({
-        item_id: 3,
-        name: "Refined White Sugar",
-        qty: lower.includes("half") || lower.includes("0.5") ? 0.5 : 1,
-        unit: "kg",
-        unit_price: 45,
-        amount: lower.includes("half") || lower.includes("0.5") ? 22.5 : 45,
+        unit_price: 60,
+        amount: qty * 60,
       });
     }
 
+    // 2. Cooking Oil (Hindi: तेल, Kannada: ಎಣ್ಣೆ, Urdu: تیل)
+    if (lower.includes("oil") || lower.includes("tel") || lower.includes("तेल") || lower.includes("enne") || lower.includes("ಎಣ್ಣೆ") || lower.includes("تیل")) {
+      const qty = has5 ? 5 : has1 ? 1 : 2;
+      lines.push({
+        item_id: 2,
+        name: "Fortune Sunlite Cooking Oil",
+        qty,
+        unit: "litre",
+        unit_price: 150,
+        amount: qty * 150,
+      });
+    }
+
+    // 3. Sugar (Hindi: चीनी / शक्कर, Kannada: ಸಕ್ಕರೆ, Urdu: چینی)
+    if (lower.includes("sugar") || lower.includes("cheeni") || lower.includes("चीनी") || lower.includes("shakkar") || lower.includes("sakkare") || lower.includes("ಸಕ್ಕರೆ") || lower.includes("چینی")) {
+      const qty = hasHalf ? 0.5 : has1 ? 1 : 2;
+      lines.push({
+        item_id: 3,
+        name: "Madhur Pure Crystal Sugar",
+        qty,
+        unit: "kg",
+        unit_price: 45,
+        amount: qty * 45,
+      });
+    }
+
+    // 4. Toor Dal (Hindi: तूर दाल, Kannada: ತೊಗರಿ ಬೇಳೆ, Urdu: تور دال)
+    if (lower.includes("dal") || lower.includes("दाल") || lower.includes("toor") || lower.includes("तूर") || lower.includes("bele") || lower.includes("ಬೇಳೆ") || lower.includes("دال")) {
+      const qty = hasHalf ? 0.5 : 1;
+      lines.push({
+        item_id: 4,
+        name: "Tata Sampann Toor Dal",
+        qty,
+        unit: "kg",
+        unit_price: 140,
+        amount: qty * 140,
+      });
+    }
+
+    // 5. Salt (Hindi: नमक, Kannada: ಉಪ್ಪು, Urdu: نمک)
+    if (lower.includes("salt") || lower.includes("namak") || lower.includes("नमक") || lower.includes("uppu") || lower.includes("ಉಪ್ಪು") || lower.includes("نمک")) {
+      const qty = has1 ? 1 : 2;
+      lines.push({
+        item_id: 6,
+        name: "Tata Salt Vacuum Evaporated",
+        qty,
+        unit: "packet",
+        unit_price: 28,
+        amount: qty * 28,
+      });
+    }
+
+    // 6. Turmeric / Haldi (Hindi: हल्दी, Kannada: ಅರಿಶಿನ, Urdu: ہلدی)
+    if (lower.includes("haldi") || lower.includes("हल्दी") || lower.includes("turmeric") || lower.includes("arishina") || lower.includes("ಅರಿಶಿನ") || lower.includes("ہلدی")) {
+      lines.push({
+        item_id: 7,
+        name: "Everest Turmeric Powder (Haldi)",
+        qty: 1,
+        unit: "packet",
+        unit_price: 35,
+        amount: 35,
+      });
+    }
+
+    // 7. Maggi Noodles (Hindi: मैगी, Kannada: ಮ್ಯಾಗಿ, Urdu: میگی)
+    if (lower.includes("maggi") || lower.includes("मैगी") || lower.includes("ಮ್ಯಾಗಿ") || lower.includes("میگی") || lower.includes("noodles")) {
+      const qty = has5 ? 5 : has4 ? 4 : 2;
+      lines.push({
+        item_id: 9,
+        name: "Maggi 2-Minute Masala Noodles",
+        qty,
+        unit: "packet",
+        unit_price: 14,
+        amount: qty * 14,
+      });
+    }
+
+    // 8. Milk (Hindi: दूध, Kannada: ಹಾಲು, Urdu: دودھ)
+    if (lower.includes("milk") || lower.includes("doodh") || lower.includes("दूध") || lower.includes("haalu") || lower.includes("ಹಾಲು") || lower.includes("دودھ")) {
+      lines.push({
+        item_id: 11,
+        name: "Amul Taaza Homogenised Toned Milk",
+        qty: 2,
+        unit: "packet",
+        unit_price: 30,
+        amount: 60,
+      });
+    }
+
+    // Default fallback if no recognized keywords matched
     if (lines.length === 0) {
-      matchedSample.items.forEach((item, idx) => {
-        lines.push({
-          item_id: idx + 1,
-          name: item.productName,
-          qty: item.quantity,
-          unit: item.unit,
-          unit_price: item.unitPrice,
-          amount: item.quantity * item.unitPrice,
-        });
+      lines.push({
+        item_id: 1,
+        name: "Daawat Rozana Basmati Rice",
+        qty: 2,
+        unit: "kg",
+        unit_price: 60,
+        amount: 120,
+      });
+      lines.push({
+        item_id: 2,
+        name: "Fortune Sunlite Cooking Oil",
+        qty: 1,
+        unit: "litre",
+        unit_price: 150,
+        amount: 150,
       });
     }
 
     const total = lines.reduce((acc, l) => acc + l.amount, 0);
     const draftId = billId || `b_${Date.now().toString(36)}`;
+
+    // Localized assistant response message
+    let readback = `Total is ${total} rupees. Please confirm or edit.`;
+    if (language === "hi") {
+      readback = `कुल बिल ${total} रुपये है। कृपया पुष्टि करें।`;
+    } else if (language === "kn") {
+      readback = `ಒಟ್ಟು ಬಿಲ್ ${total} ರೂಪಾಯಿಗಳು. ದಯವಿಟ್ಟು ದೃಢೀಕರಿಸಿ.`;
+    } else if (language === "ur") {
+      readback = `کل بل ${total} روپے ہے۔ برائے مہربانی تصدیق کریں۔`;
+    }
 
     return {
       transcript: text,
@@ -141,7 +233,7 @@ export async function parseTranscriptFallback(
         total,
         status: "draft",
       },
-      message: `Total bill is ${total} rupees. Please confirm or edit.`,
+      message: readback,
     };
   }
 }
@@ -210,8 +302,10 @@ export async function sendCorrection(
 /**
  * Offline simulation fallback with mock voice script when server is offline
  */
-function getOfflineVoiceFallback(billId?: string, language: string = "hi"): VoiceApiResponse {
-  const sample = SAMPLE_VOICE_SCRIPTS[0];
+function getOfflineVoiceFallback(billId?: string, language: string = "en"): VoiceApiResponse {
+  const langKey = (["en", "hi", "kn", "ur"].includes(language) ? language : "en") as "en" | "hi" | "kn" | "ur";
+  const scripts = SAMPLE_VOICE_SCRIPTS_BY_LANG[langKey] || SAMPLE_VOICE_SCRIPTS;
+  const sample = scripts[0];
   const lines: BackendBillLine[] = sample.items.map((item, idx) => ({
     item_id: idx + 1,
     name: item.productName,
@@ -224,6 +318,15 @@ function getOfflineVoiceFallback(billId?: string, language: string = "hi"): Voic
   const total = lines.reduce((acc, l) => acc + l.amount, 0);
   const draftId = billId || `b_${Math.random().toString(36).substring(2, 8)}`;
 
+  let readback = `Total is ${total} rupees. Offline preview mode.`;
+  if (language === "hi") {
+    readback = `कुल बिल ${total} रुपये है। ऑफलाइन पूर्वावलोकन।`;
+  } else if (language === "kn") {
+    readback = `ಒಟ್ಟು ಬಿಲ್ ${total} ರೂಪಾಯಿಗಳು. ಆಫ್‌ಲೈನ್ ಪೂರ್ವವೀಕ್ಷಣೆ.`;
+  } else if (language === "ur") {
+    readback = `کل بل ${total} روپے ہے۔ آف لائن پیش منظر۔`;
+  }
+
   return {
     transcript: sample.text,
     intent: "new_sale",
@@ -233,6 +336,6 @@ function getOfflineVoiceFallback(billId?: string, language: string = "hi"): Voic
       total,
       status: "draft",
     },
-    message: `Total is ${total} rupees. Offline preview mode.`,
+    message: readback,
   };
 }

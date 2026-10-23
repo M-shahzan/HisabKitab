@@ -21,6 +21,15 @@ import { deductStockForSale } from "@/services/stock-service";
 import { recordNewTransaction } from "@/services/summary-service";
 import { multiplyMoney, sumMoney } from "@/lib/formatters";
 
+export type SupportedLanguage = "en" | "hi" | "kn" | "ur";
+
+const LANG_TTS_CODE: Record<SupportedLanguage, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+  ur: "ur-IN",
+};
+
 export function useVoiceBilling() {
   const [state, setState] = useState<BillingState>("idle");
   const [transcript, setTranscript] = useState<string>("");
@@ -35,6 +44,24 @@ export function useVoiceBilling() {
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "khata">("cash");
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState<boolean>(false);
 
+  // Active voice language (synced with settings and persisted)
+  const [selectedLanguage, setSelectedLanguageState] = useState<SupportedLanguage>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_voice_lang");
+      if (saved && (saved === "en" || saved === "hi" || saved === "kn" || saved === "ur")) {
+        return saved as SupportedLanguage;
+      }
+    }
+    return "en";
+  });
+
+  const setSelectedLanguage = useCallback((lang: SupportedLanguage) => {
+    setSelectedLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hisabkitab_voice_lang", lang);
+    }
+  }, []);
+
   // Subtotal & Grand total recalculated from current items
   const subtotal = sumMoney(items.map((i) => i.lineTotal));
   const total = subtotal;
@@ -43,7 +70,7 @@ export function useVoiceBilling() {
    * Helper to process a voice API response and sync state
    */
   const handleVoiceResponse = useCallback(
-    (response: VoiceApiResponse) => {
+    (response: VoiceApiResponse, langToSpeak?: SupportedLanguage) => {
       setTranscript(response.transcript || "");
 
       if (response.bill) {
@@ -59,17 +86,18 @@ export function useVoiceBilling() {
       setHasUnsavedEdits(false);
       setState("review");
 
-      // Spoken response playback
+      // Spoken response playback with localized dialect voice
       if (response.message) {
         setSpokenMessage(response.message);
-        ttsService.speak(response.message, "hi-IN", {
+        const voiceLang = langToSpeak || selectedLanguage;
+        ttsService.speak(response.message, LANG_TTS_CODE[voiceLang] || "en-IN", {
           onStart: () => setIsSpeaking(true),
           onEnd: () => setIsSpeaking(false),
           onError: () => setIsSpeaking(false),
         });
       }
     },
-    []
+    [selectedLanguage]
   );
 
   /**
@@ -122,9 +150,9 @@ export function useVoiceBilling() {
         return;
       }
 
-      // Send to backend /voice with active bill_id (if appending or editing)
-      const response = await sendVoiceAudio(audioBlob, billId || undefined, "hi");
-      handleVoiceResponse(response);
+      // Send to backend /voice with active bill_id and selected language
+      const response = await sendVoiceAudio(audioBlob, billId || undefined, selectedLanguage);
+      handleVoiceResponse(response, selectedLanguage);
     } catch (err: any) {
       audioRecorder.cancel();
       setState("error");
@@ -132,13 +160,13 @@ export function useVoiceBilling() {
         err?.message || "Failed to process audio with server. Please try speaking again."
       );
     }
-  }, [state, billId, handleVoiceResponse]);
+  }, [state, billId, selectedLanguage, handleVoiceResponse]);
 
   /**
    * Process manual text transcript (e.g. from editing text or demo presets)
    */
   const processTranscript = useCallback(
-    async (textToParse: string) => {
+    async (textToParse: string, langOverride?: SupportedLanguage) => {
       if (!textToParse.trim()) return;
 
       setState("processing");
@@ -147,14 +175,15 @@ export function useVoiceBilling() {
       setIsSpeaking(false);
 
       try {
-        const result = await parseTranscriptFallback(textToParse, billId || undefined);
-        handleVoiceResponse(result);
+        const activeLang = langOverride || selectedLanguage;
+        const result = await parseTranscriptFallback(textToParse, billId || undefined, activeLang);
+        handleVoiceResponse(result, activeLang);
       } catch (err: any) {
         setState("error");
         setErrorMessage(err?.message || "Failed to process spoken items. Please retry.");
       }
     },
-    [billId, handleVoiceResponse]
+    [billId, selectedLanguage, handleVoiceResponse]
   );
 
   /**
@@ -162,12 +191,12 @@ export function useVoiceBilling() {
    */
   const replayAudio = useCallback(() => {
     if (!spokenMessage) return;
-    ttsService.speak(spokenMessage, "hi-IN", {
+    ttsService.speak(spokenMessage, LANG_TTS_CODE[selectedLanguage] || "en-IN", {
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
-  }, [spokenMessage]);
+  }, [spokenMessage, selectedLanguage]);
 
   /**
    * Stop any ongoing speech playback
@@ -283,6 +312,8 @@ export function useVoiceBilling() {
         total: response.total ?? total,
         itemCount: items.length,
         timestamp: new Date().toISOString(),
+        paymentMode,
+        items: items.map((i) => ({ ...i })),
         lowStockItems: lowStockList,
         stockUpdates: items.map((i) => ({
           productId: i.productId,
@@ -334,6 +365,8 @@ export function useVoiceBilling() {
     confirmedSale,
     paymentMode,
     hasUnsavedEdits,
+    selectedLanguage,
+    setSelectedLanguage,
     setPaymentMode,
     startListening,
     stopListening,

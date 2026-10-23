@@ -359,32 +359,166 @@ export const MOCK_SUMMARY: SummaryAnalytics = {
   ],
 };
 
-export const SAMPLE_VOICE_SCRIPTS = [
+export const LANGUAGE_OPTIONS = [
   {
-    title: "Grocery Essentials",
-    text: "Give the customer 2 kilos of rice, one litre of cooking oil, and half a kilo of sugar.",
-    items: [
-      { productName: "Daawat Rozana Basmati Rice", quantity: 2, unit: "kg" as const, unitPrice: 60 },
-      { productName: "Fortune Sunlite Cooking Oil", quantity: 1, unit: "litre" as const, unitPrice: 150 },
-      { productName: "Madhur Pure Crystal Sugar", quantity: 0.5, unit: "kg" as const, unitPrice: 45 },
-    ],
+    id: "en" as const,
+    name: "English",
+    nativeName: "English",
+    subtitle: "Indian English + Hinglish terms",
+    badge: "Live",
+    badgeVariant: "emerald" as const,
   },
   {
-    title: "Daily Staples (Hindi/Hinglish)",
-    text: "Ek kilo toor dal, do packet tata salt, aur 500 gram haldi",
-    items: [
-      { productName: "Tata Sampann Toor Dal", quantity: 1, unit: "kg" as const, unitPrice: 140 },
-      { productName: "Tata Salt Vacuum Evaporated", quantity: 2, unit: "packet" as const, unitPrice: 28 },
-      { productName: "Everest Turmeric Powder (Haldi)", quantity: 0.5, unit: "packet" as const, unitPrice: 35 },
-    ],
+    id: "hi" as const,
+    name: "हिन्दी (Hindi)",
+    nativeName: "हिन्दी",
+    subtitle: "तूर दाल, तेल, चीनी, आटा",
+    badge: "Live",
+    badgeVariant: "emerald" as const,
   },
   {
-    title: "Snacks & Breakfast",
-    text: "5 packets of Maggi, 2 packets of Amul butter, and 2 bottles of milk",
-    items: [
-      { productName: "Maggi 2-Minute Masala Noodles", quantity: 5, unit: "packet" as const, unitPrice: 14 },
-      { productName: "Amul Butter Pasteurized (100g)", quantity: 2, unit: "packet" as const, unitPrice: 56 },
-      { productName: "Amul Taaza Homogenised Toned Milk", quantity: 2, unit: "packet" as const, unitPrice: 30 },
-    ],
+    id: "kn" as const,
+    name: "ಕನ್ನಡ (Kannada)",
+    nativeName: "ಕನ್ನಡ",
+    subtitle: "ಅಕ್ಕಿ, ಬೇಳೆ, ಎಣ್ಣೆ, ಸಕ್ಕರೆ",
+    badge: "Ready",
+    badgeVariant: "blue" as const,
+  },
+  {
+    id: "ur" as const,
+    name: "اردو (Urdu)",
+    nativeName: "اردو",
+    subtitle: "Layout RTL architectural support",
+    badge: "RTL Prep",
+    badgeVariant: "gray" as const,
   },
 ];
+
+export const SAMPLE_VOICE_SCRIPTS_BY_LANG: Record<
+  "hi" | "en" | "kn" | "ur",
+  Array<{
+    title: string;
+    text: string;
+    items: Array<{
+      productName: string;
+      quantity: number;
+      unit: "kg" | "litre" | "packet" | "piece";
+      unitPrice: number;
+    }>;
+  }>
+> = {
+  hi: [
+    {
+      title: "दैनिक राशन (Daily Staples)",
+      text: "दो किलो बासमती चावल, एक लीटर तेल और आधा किलो चीनी",
+      items: [
+        { productName: "Daawat Rozana Basmati Rice", quantity: 2, unit: "kg", unitPrice: 60 },
+        { productName: "Fortune Sunlite Cooking Oil", quantity: 1, unit: "litre", unitPrice: 150 },
+        { productName: "Madhur Pure Crystal Sugar", quantity: 0.5, unit: "kg", unitPrice: 45 },
+      ],
+    },
+    {
+      title: "दाल व मसाले (Dal & Spices)",
+      text: "एक किलो तूर दाल, दो पैकेट टाटा नमक और हल्दी पाउडर",
+      items: [
+        { productName: "Tata Sampann Toor Dal", quantity: 1, unit: "kg", unitPrice: 140 },
+        { productName: "Tata Salt Vacuum Evaporated", quantity: 2, unit: "packet", unitPrice: 28 },
+        { productName: "Everest Turmeric Powder (Haldi)", quantity: 1, unit: "packet", unitPrice: 35 },
+      ],
+    },
+    {
+      title: "नाश्ता और दूध (Breakfast)",
+      text: "चार पैकेट मैगी और दो पैकेट अमूल दूध",
+      items: [
+        { productName: "Maggi 2-Minute Masala Noodles", quantity: 4, unit: "packet", unitPrice: 14 },
+        { productName: "Amul Taaza Homogenised Toned Milk", quantity: 2, unit: "packet", unitPrice: 30 },
+      ],
+    },
+  ],
+  en: [
+    {
+      title: "Grocery Essentials",
+      text: "Give the customer 2 kilos of rice, one litre of cooking oil, and half a kilo of sugar.",
+      items: [
+        { productName: "Daawat Rozana Basmati Rice", quantity: 2, unit: "kg", unitPrice: 60 },
+        { productName: "Fortune Sunlite Cooking Oil", quantity: 1, unit: "litre", unitPrice: 150 },
+        { productName: "Madhur Pure Crystal Sugar", quantity: 0.5, unit: "kg", unitPrice: 45 },
+      ],
+    },
+    {
+      title: "Daily Staples (Hinglish)",
+      text: "Ek kilo toor dal, do packet tata salt, aur 500 gram haldi",
+      items: [
+        { productName: "Tata Sampann Toor Dal", quantity: 1, unit: "kg", unitPrice: 140 },
+        { productName: "Tata Salt Vacuum Evaporated", quantity: 2, unit: "packet", unitPrice: 28 },
+        { productName: "Everest Turmeric Powder (Haldi)", quantity: 0.5, unit: "packet", unitPrice: 35 },
+      ],
+    },
+    {
+      title: "Snacks & Breakfast",
+      text: "5 packets of Maggi, 2 packets of Amul butter, and 2 bottles of milk",
+      items: [
+        { productName: "Maggi 2-Minute Masala Noodles", quantity: 5, unit: "packet", unitPrice: 14 },
+        { productName: "Amul Butter Pasteurized (100g)", quantity: 2, unit: "packet", unitPrice: 56 },
+        { productName: "Amul Taaza Homogenised Toned Milk", quantity: 2, unit: "packet", unitPrice: 30 },
+      ],
+    },
+  ],
+  kn: [
+    {
+      title: "ದೈನಂದಿನ ದಿನಸಿ (Daily Groceries)",
+      text: "ಎರಡು ಕೆಜಿ ಅಕ್ಕಿ, ಒಂದು ಲೀಟರ್ ಅಡುಗೆ ಎಣ್ಣೆ ಮತ್ತು ಅರ್ಧ ಕೆಜಿ ಸಕ್ಕರೆ",
+      items: [
+        { productName: "Daawat Rozana Basmati Rice", quantity: 2, unit: "kg", unitPrice: 60 },
+        { productName: "Fortune Sunlite Cooking Oil", quantity: 1, unit: "litre", unitPrice: 150 },
+        { productName: "Madhur Pure Crystal Sugar", quantity: 0.5, unit: "kg", unitPrice: 45 },
+      ],
+    },
+    {
+      title: "ಬೇಳೆ ಮತ್ತು ಉಪ್ಪು (Dal & Salt)",
+      text: "ಒಂದು ಕೆಜಿ ತೊಗರಿ ಬೇಳೆ ಮತ್ತು ಎರಡು ಪ್ಯಾಕೆಟ್ ಉಪ್ಪು",
+      items: [
+        { productName: "Tata Sampann Toor Dal", quantity: 1, unit: "kg", unitPrice: 140 },
+        { productName: "Tata Salt Vacuum Evaporated", quantity: 2, unit: "packet", unitPrice: 28 },
+      ],
+    },
+    {
+      title: "ಬೆಳಗಿನ ಉಪಹಾರ (Breakfast)",
+      text: "ನಾಲ್ಕು ಪ್ಯಾಕೆಟ್ ಮ್ಯಾಗಿ ಮತ್ತು ಎರಡು ಪ್ಯಾಕೆಟ್ ಹಾಲು",
+      items: [
+        { productName: "Maggi 2-Minute Masala Noodles", quantity: 4, unit: "packet", unitPrice: 14 },
+        { productName: "Amul Taaza Homogenised Toned Milk", quantity: 2, unit: "packet", unitPrice: 30 },
+      ],
+    },
+  ],
+  ur: [
+    {
+      title: "روزمرہ راشن (Daily Ration)",
+      text: "دو کلو باسمتی چاول، ایک لیٹر تیل اور آدھا کلو چینی",
+      items: [
+        { productName: "Daawat Rozana Basmati Rice", quantity: 2, unit: "kg", unitPrice: 60 },
+        { productName: "Fortune Sunlite Cooking Oil", quantity: 1, unit: "litre", unitPrice: 150 },
+        { productName: "Madhur Pure Crystal Sugar", quantity: 0.5, unit: "kg", unitPrice: 45 },
+      ],
+    },
+    {
+      title: "دال اور نمک (Dal & Salt)",
+      text: "ایک کلو تور دال اور دو پیکٹ ٹاٹا نمک",
+      items: [
+        { productName: "Tata Sampann Toor Dal", quantity: 1, unit: "kg", unitPrice: 140 },
+        { productName: "Tata Salt Vacuum Evaporated", quantity: 2, unit: "packet", unitPrice: 28 },
+      ],
+    },
+    {
+      title: "ناشتہ اور دودھ (Breakfast)",
+      text: "چار پیکٹ میگی اور دو پیکٹ امول دودھ",
+      items: [
+        { productName: "Maggi 2-Minute Masala Noodles", quantity: 4, unit: "packet", unitPrice: 14 },
+        { productName: "Amul Taaza Homogenised Toned Milk", quantity: 2, unit: "packet", unitPrice: 30 },
+      ],
+    },
+  ],
+};
+
+export const SAMPLE_VOICE_SCRIPTS = SAMPLE_VOICE_SCRIPTS_BY_LANG.en;
+

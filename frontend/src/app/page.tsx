@@ -13,6 +13,7 @@ import { BillSummary } from "@/components/billing/BillSummary";
 import { ProductPicker } from "@/components/billing/ProductPicker";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { ErrorState, EmptyState } from "@/components/ui/States";
 import {
   Sparkles,
@@ -24,8 +25,13 @@ import {
   CheckCircle2,
   LayoutDashboard,
   Store,
+  Languages,
 } from "lucide-react";
-import { SAMPLE_VOICE_SCRIPTS } from "@/lib/mock-data";
+import {
+  LANGUAGE_OPTIONS,
+  SAMPLE_VOICE_SCRIPTS_BY_LANG,
+  SAMPLE_VOICE_SCRIPTS,
+} from "@/lib/mock-data";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function NewOrderPage() {
@@ -48,6 +54,8 @@ export default function NewOrderPage() {
     confirmedSale,
     paymentMode,
     hasUnsavedEdits,
+    selectedLanguage,
+    setSelectedLanguage,
     setPaymentMode,
     startListening,
     stopListening,
@@ -61,6 +69,12 @@ export default function NewOrderPage() {
     confirmSale,
   } = useVoiceBilling();
 
+  const activeLanguageMeta =
+    LANGUAGE_OPTIONS.find((l) => l.id === selectedLanguage) || LANGUAGE_OPTIONS[0];
+
+  const currentVoiceScripts =
+    SAMPLE_VOICE_SCRIPTS_BY_LANG[selectedLanguage] || SAMPLE_VOICE_SCRIPTS;
+
   // Once sale is confirmed, redirect to success screen with receipt details
   useEffect(() => {
     if (state === "success" && confirmedSale) {
@@ -70,7 +84,7 @@ export default function NewOrderPage() {
   }, [state, confirmedSale, router]);
 
   const handleQuickScript = (text: string) => {
-    processTranscript(text);
+    processTranscript(text, selectedLanguage);
   };
 
   return (
@@ -129,24 +143,83 @@ export default function NewOrderPage() {
       {/* Main Voice Interaction Hero Panel */}
       <Card className="border-emerald-200/60 bg-gradient-to-b from-emerald-50/50 via-white to-white shadow-card overflow-hidden">
         <CardContent className="pt-6 pb-6">
-          {/* Quick Voice Demo Presets */}
-          <div className="mb-4 flex flex-wrap items-center gap-2 justify-center">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Volume2 className="h-3 w-3 text-emerald-600" />
-              Quick Voice Test:
-            </span>
-            {SAMPLE_VOICE_SCRIPTS.map((script, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleQuickScript(script.text)}
-                disabled={state === "listening" || state === "processing" || state === "saving"}
-                className="text-xs font-medium bg-white hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs transition-colors disabled:opacity-50 min-h-[32px]"
-                title={script.text}
-              >
-                &ldquo;{script.title}&rdquo;
-              </button>
-            ))}
+          {/* Conversational Language & Dialect Readiness Selector */}
+          <div className="mb-6 bg-white/80 p-3.5 sm:p-4 rounded-2xl border border-emerald-100/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <Languages className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900">
+                      Voice Recognition Language
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      1-Tap Quick Switch
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 hidden sm:block">
+                    Select your primary counter language for speech recognition and instant audio readback
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs text-slate-600 sm:text-right">
+                Active: <span className="font-bold text-emerald-700">{activeLanguageMeta.name}</span>
+              </div>
+            </div>
+
+            {/* 4 Regional Language Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {LANGUAGE_OPTIONS.map((lang) => {
+                const isSelected = selectedLanguage === lang.id;
+                return (
+                  <button
+                    key={lang.id}
+                    type="button"
+                    onClick={() => setSelectedLanguage(lang.id)}
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between group min-h-[68px] ${
+                      isSelected
+                        ? "bg-emerald-50/90 border-emerald-600 ring-2 ring-emerald-600 shadow-sm"
+                        : "bg-white border-slate-200 hover:border-emerald-300 hover:bg-slate-50/80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full gap-1">
+                      <span className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-emerald-950">
+                        {lang.name}
+                      </span>
+                      <Badge variant={lang.badgeVariant} className="text-[10px] px-1.5 py-0 h-4.5 shrink-0">
+                        {lang.badge}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 leading-snug">
+                      {lang.subtitle}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Voice Demo Presets for Selected Language */}
+            <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-wrap items-center gap-2 justify-center">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <Volume2 className="h-3 w-3 text-emerald-600" />
+                Quick Voice Test ({activeLanguageMeta.nativeName}):
+              </span>
+              {currentVoiceScripts.map((script, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleQuickScript(script.text)}
+                  disabled={state === "listening" || state === "processing" || state === "saving"}
+                  className="text-xs font-medium bg-white hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs transition-colors disabled:opacity-50 min-h-[32px] flex items-center gap-1.5"
+                  title={script.text}
+                >
+                  <Sparkles className="h-3 w-3 text-emerald-600 shrink-0" />
+                  <span>&ldquo;{script.title}&rdquo;</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Central Microphone Button (MediaRecorder) */}

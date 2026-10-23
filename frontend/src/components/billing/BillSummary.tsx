@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { formatINR } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
-import { Plus, CheckCircle2, XCircle, QrCode, Wallet, BookOpen, AlertTriangle } from "lucide-react";
+import { Plus, CheckCircle2, XCircle, QrCode, Wallet, BookOpen, AlertTriangle, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BillSummaryProps {
@@ -159,6 +159,20 @@ export function BillSummary({
             <Plus className="h-4 w-4 mr-1.5" />
             <span>Add Item</span>
           </Button>
+
+          {itemCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => window.print()}
+              disabled={isSaving}
+              className="text-xs text-slate-700 bg-white hover:bg-slate-50 min-h-[44px] px-3"
+              title="Print bill slip"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+          )}
 
           <Button
             type="button"

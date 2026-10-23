@@ -110,6 +110,10 @@ export interface ConfirmSaleResponse {
   total: number;
   itemCount: number;
   timestamp: string;
+  paymentMode?: "cash" | "upi" | "khata";
+  items?: BillItem[];
+  customerPhone?: string;
+  customerName?: string;
   stockUpdates?: Array<{
     productId: string;
     newQuantity: number;
