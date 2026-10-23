@@ -23,23 +23,10 @@ export default function SaleSuccessPage() {
         const parsed = JSON.parse(stored);
         setSale(parsed);
       } catch {
-        router.push("/billing");
+        router.push("/");
       }
     } else {
-      // If user directly opened without confirmed sale, provide fallback mock for display/testing
-      setSale({
-        success: true,
-        billNumber: "HK-8431",
-        transactionId: "txn-1729678120",
-        total: 292.5,
-        itemCount: 3,
-        timestamp: new Date().toISOString(),
-        stockUpdates: [
-          { productId: "prod-1", newQuantity: 43 },
-          { productId: "prod-2", newQuantity: 2 },
-          { productId: "prod-3", newQuantity: 0 },
-        ],
-      });
+      router.push("/");
     }
 
     // Trigger subtle emerald confetti on entrance

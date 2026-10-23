@@ -25,7 +25,6 @@ import {
   LayoutDashboard,
   Store,
 } from "lucide-react";
-import { SAMPLE_VOICE_SCRIPTS } from "@/lib/mock-data";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function NewOrderPage() {
@@ -68,10 +67,6 @@ export default function NewOrderPage() {
       router.push("/billing/success");
     }
   }, [state, confirmedSale, router]);
-
-  const handleQuickScript = (text: string) => {
-    processTranscript(text);
-  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -129,24 +124,15 @@ export default function NewOrderPage() {
       {/* Main Voice Interaction Hero Panel */}
       <Card className="border-emerald-200/60 bg-gradient-to-b from-emerald-50/50 via-white to-white shadow-card overflow-hidden">
         <CardContent className="pt-6 pb-6">
-          {/* Quick Voice Demo Presets */}
-          <div className="mb-4 flex flex-wrap items-center gap-2 justify-center">
+          {/* Spoken Voice Guidance Hints */}
+          <div className="mb-4 flex flex-wrap items-center gap-2 justify-center text-center">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Volume2 className="h-3 w-3 text-emerald-600" />
-              Quick Voice Test:
+              <Volume2 className="h-3.5 w-3.5 text-emerald-600" />
+              Voice Guide:
             </span>
-            {SAMPLE_VOICE_SCRIPTS.map((script, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleQuickScript(script.text)}
-                disabled={state === "listening" || state === "processing" || state === "saving"}
-                className="text-xs font-medium bg-white hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 shadow-xs transition-colors disabled:opacity-50 min-h-[32px]"
-                title={script.text}
-              >
-                &ldquo;{script.title}&rdquo;
-              </button>
-            ))}
+            <span className="text-xs text-slate-600">
+              Speak naturally e.g. &ldquo;Do kilo chawal, ek kilo cheeni&rdquo; or &ldquo;Ek litre sarson tel&rdquo;
+            </span>
           </div>
 
           {/* Central Microphone Button (MediaRecorder) */}

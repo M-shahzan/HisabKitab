@@ -1,0 +1,6 @@
+file,language,transcript,seconds,error,expected,correct_yes_no
+01.mp4,hi,2 Kg Chawal,2.07,,,
+02.mp4,hi,"1 kg aloo, 1.5 kg piyaz, 1 litre oil",0.97,,,
+03.mp4,hi,चीनी 2 किलो प्राइस है 200 किलो,0.89,,,
+04.mp4,hi,चीनी 3 किलो प्राइस 200 किलो नहीं 200 रुपए,0.81,,,
+05.mp4,hi,"2 kg chawal नहीं, 2.5 kg chawal",2.59,,,

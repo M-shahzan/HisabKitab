@@ -1,1 +1,31 @@
-id,sentence,expected_items,expected_qty,expected_unit,category
+id,sentence,expected_intent,expected_items,expected_qty,expected_unit,expected_query_item_id,category
+1,pav kilo toor dal de do,new_sale,3,0.25,kg,,single_sale
+2,aadha kilo cheeni pack karo,new_sale,2,0.5,kg,,single_sale
+3,paun kilo moong dal dena bhai,new_sale,4,0.75,kg,,single_sale
+4,ek kilo gehun ka atta de do,new_sale,5,1.0,kg,,single_sale
+5,sava kilo tamatar de do,new_sale,20,1.25,kg,,single_sale
+6,derh litre doodh do,new_sale,8,1.5,litre,,single_sale
+7,do kilo aloo daal do,new_sale,19,2.0,kg,,single_sale
+8,dhai kilo chawal dena,new_sale,1,2.5,kg,,single_sale
+9,ek litre sarson tel dena,new_sale,6,1.0,litre,,single_sale
+10,do packet maggi aur ek bottle cold drink dena,unclear,,,,,unknown_product
+11,do packet dahi de do,new_sale,9,2.0,packet,,single_sale
+12,ek packet chai patti do,new_sale,10,1.0,packet,,single_sale
+13,ek packet haldi powder dena,new_sale,13,1.0,packet,,single_sale
+14,char packet parle g biscuit dena,new_sale,25,4.0,packet,,single_sale
+15,teen piece lifebuoy sabun de do,new_sale,21,3.0,piece,,single_sale
+16,do piece vim bar bartan sabun lagao,new_sale,23,2.0,piece,,single_sale
+17,ek colgate toothpaste de do,new_sale,24,1.0,piece,,single_sale
+18,ek kilo surf washing powder do,new_sale,22,1.0,kg,,single_sale
+19,basmati chawal paisath rupaye kilo ke hisab se do kilo do,new_sale,1,2.0,kg,,price_sale
+20,refined tel ek sau paintis rupaye litre ke rate se ek litre lagao,new_sale,7,1.0,litre,,price_sale
+21,tees rupaye piece ke hisab se do sabun de do,new_sale,21,2.0,piece,,price_sale
+22,do kilo chawal aur ek kilo chini do,new_sale,"1, 2","2.0, 1.0","kg, kg",,multi_sale
+23,ek litre doodh aur do packet dahi pack kar do,new_sale,"8, 9","1.0, 2.0","litre, packet",,multi_sale
+24,do kilo aloo ek kilo pyaz aur aadha kilo tamatar dena,new_sale,"19, 18, 20","2.0, 1.0, 0.5","kg, kg, kg",,multi_sale
+25,ek piece lux sabun aur ek packet chai patti de do,new_sale,"21, 10","1.0, 1.0","piece, packet",,multi_sale
+26,cheeni ka kitna stock bacha hai dukaan mein,query_stock,,,,2,stock_query
+27,aaj ka total hisab kitna hua hai,query_summary,,,,,daily_summary
+28,haan bilkul theek hai bill confirm karo,confirm,,,,,confirm_command
+29,nahi ye bill cancel kar do mat banao,cancel,,,,,cancel_command
+30,do kilo chawal aur ek packet noodles de do,new_sale,1,2.0,kg,,mixed_sale

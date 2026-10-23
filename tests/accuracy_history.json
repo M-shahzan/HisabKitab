@@ -1,0 +1,40 @@
+[
+  {
+    "timestamp": "2026-10-23T10:20:13.767300+00:00",
+    "model": "openai/gpt-oss-20b",
+    "total_cases": 5,
+    "exact_matches": 4,
+    "item_matching_accuracy": 100.0,
+    "quantity_accuracy": 75.0,
+    "avg_latency": 3.36,
+    "failures_count": 1
+  },
+  {
+    "timestamp": "2026-10-23T10:49:32.988758+00:00",
+    "model": "openai/gpt-oss-20b",
+    "total_cases": 30,
+    "exact_matches": 30,
+    "intent_accuracy": 100.0,
+    "item_matching_accuracy": 100.0,
+    "quantity_accuracy": 100.0,
+    "unit_accuracy": 100.0,
+    "exact_accuracy": 100.0,
+    "avg_latency": 14.78,
+    "failures_count": 0
+  },
+  {
+    "timestamp": "2026-10-23T11:02:13.037031+00:00",
+    "model": "openai/gpt-oss-20b",
+    "total_cases": 30,
+    "exact_matches": 22,
+    "intent_accuracy": 73.33,
+    "item_matching_accuracy": 100.0,
+    "quantity_accuracy": 100.0,
+    "unit_accuracy": 100.0,
+    "exact_accuracy": 73.33,
+    "avg_latency": 5.1,
+    "wall_clock_time": 211.12,
+    "throttling_events": 10,
+    "failures_count": 8
+  }
+]
