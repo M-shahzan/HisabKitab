@@ -1,5 +1,6 @@
 import copy
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +8,8 @@ from backend.db import get_db
 
 # In-memory store for draft bills keyed by bill_id
 bills: dict[str, dict[str, Any]] = {}
+confirmed_bills: set[str] = set()
+cancelled_bills: set[str] = set()
 
 
 def _format_num(val: float) -> int | float:
@@ -33,6 +36,8 @@ def get_bill(bill_id: str) -> dict[str, Any]:
 def clear_bills() -> None:
     """Clear all draft bills from memory (useful for test isolation)."""
     bills.clear()
+    confirmed_bills.clear()
+    cancelled_bills.clear()
 
 
 def create_draft_bill(
@@ -152,6 +157,10 @@ def edit_draft_bill(bill_id: str, edit: dict[str, Any]) -> dict[str, Any]:
     - Atomic validation: invalid edits raise ValueError/KeyError without corrupting the draft.
     - Isolated from other bills.
     """
+    if bill_id in confirmed_bills:
+        raise ValueError(f"Cannot edit confirmed bill '{bill_id}'.")
+    if bill_id in cancelled_bills:
+        raise ValueError(f"Cannot edit cancelled bill '{bill_id}'.")
     if bill_id not in bills:
         raise KeyError(f"Bill '{bill_id}' not found.")
 
@@ -219,3 +228,113 @@ def edit_draft_bill(bill_id: str, edit: dict[str, Any]) -> dict[str, Any]:
     # Save validated update to in-memory store
     bills[bill_id] = working_bill
     return copy.deepcopy(working_bill)
+
+
+def confirm_bill(bill_id: str, db_path: str | Path | None = None) -> dict[str, Any]:
+    """Confirm a draft bill: insert sales and sale_items, deduct quantities from stock,
+
+    identify low-stock items, and mark the bill as confirmed.
+
+    Transactional guarantees:
+    - Atomically updates sales, sale_items, and stock.
+    - If any error occurs, rolls back changes completely.
+    - Prevents duplicate confirmation.
+    - Follows negative-stock rule: allows stock to become negative and flags it in low_stock.
+
+    Returns:
+    {"sale_id": int, "total": float | int, "low_stock": list[str]}
+    """
+    if bill_id in confirmed_bills:
+        raise ValueError(f"Bill '{bill_id}' has already been confirmed.")
+    if bill_id in cancelled_bills:
+        raise ValueError(f"Bill '{bill_id}' has been cancelled and cannot be confirmed.")
+    if bill_id not in bills:
+        raise KeyError(f"Bill '{bill_id}' not found.")
+
+    bill = bills[bill_id]
+    if bill.get("status") != "draft":
+        raise ValueError(f"Bill '{bill_id}' is not in draft state (current: {bill.get('status')}).")
+    if len(bill.get("lines", [])) == 0:
+        raise ValueError(f"Bill '{bill_id}' has no line items to confirm.")
+
+    low_stock: list[str] = []
+
+    with get_db(db_path) as conn:
+        cursor = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+
+        # 1. Insert into sales
+        cursor.execute(
+            "INSERT INTO sales (created_at, total) VALUES (?, ?);",
+            (now, bill["total"]),
+        )
+        sale_id = cursor.lastrowid
+
+        # 2. Insert into sale_items and deduct stock
+        for line in bill["lines"]:
+            item_id = int(line["item_id"])
+            qty = float(line["qty"])
+            unit_price = float(line["unit_price"])
+
+            cursor.execute(
+                "INSERT INTO sale_items (sale_id, item_id, quantity, unit_price) VALUES (?, ?, ?, ?);",
+                (sale_id, item_id, qty, unit_price),
+            )
+
+            # Check stock record
+            cursor.execute("SELECT quantity, low_threshold FROM stock WHERE item_id = ?;", (item_id,))
+            stock_row = cursor.fetchone()
+            if stock_row is None:
+                raise ValueError(f"Stock record for item_id {item_id} not found in database.")
+
+            current_qty = float(stock_row["quantity"])
+            low_threshold = float(stock_row["low_threshold"])
+            new_qty = _format_num(current_qty - qty)
+
+            cursor.execute(
+                "UPDATE stock SET quantity = ? WHERE item_id = ?;",
+                (new_qty, item_id),
+            )
+
+            # Low stock check (including negative stock)
+            if new_qty < low_threshold:
+                item_name = line.get("name")
+                if not item_name:
+                    cursor.execute("SELECT name FROM items WHERE id = ?;", (item_id,))
+                    ir = cursor.fetchone()
+                    item_name = ir["name"] if ir else f"Item {item_id}"
+                if item_name not in low_stock:
+                    low_stock.append(item_name)
+
+    # 3. Mark as confirmed
+    confirmed_bills.add(bill_id)
+    bill["status"] = "confirmed"
+    bill["sale_id"] = sale_id
+
+    return {
+        "sale_id": sale_id,
+        "total": bill["total"],
+        "low_stock": low_stock,
+    }
+
+
+def cancel_bill(bill_id: str) -> dict[str, Any]:
+    """Cancel a draft bill.
+
+    Prevents future confirmation and discards the draft from active bills.
+    Raises:
+    - ValueError: if bill has already been confirmed.
+    - KeyError: if bill does not exist.
+    """
+    if bill_id in confirmed_bills:
+        raise ValueError(f"Bill '{bill_id}' has already been confirmed and cannot be cancelled.")
+    if bill_id in cancelled_bills:
+        return {"ok": True}
+    if bill_id not in bills:
+        raise KeyError(f"Bill '{bill_id}' not found.")
+
+    cancelled_bills.add(bill_id)
+    bill = bills.pop(bill_id)
+    bill["status"] = "cancelled"
+
+    return {"ok": True}

@@ -3,9 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hisab Kitab</title>
+  <title>Hisab Kitab — Summary & Inventory</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <header>
+    <div class="logo-container">
+      <span style="font-size: 1.8rem;">📊</span>
+      <h1 class="logo-title">Hisab Kitab</h1>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">New Sale</a>
+      <a href="summary.html" class="nav-link active">Summary & Stock</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Daily Summary Filter & Key Metrics -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <h2 style="font-size: 1.4rem;">Daily Sales Summary</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="date" id="summary-date-input" style="background:#0f172a; color:#fff; border:1px solid #334155; padding:8px 12px; border-radius:8px; font-size:1rem;">
+          <button id="today-btn" class="btn" style="padding: 8px 16px; font-size: 1rem; background-color: var(--primary-color); color: white;">Today</button>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="metric-card">
+          <span class="metric-label">Total Sales</span>
+          <span id="metric-total" class="metric-val" style="color: #4ade80;">₹0</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">Bills Count</span>
+          <span id="metric-count" class="metric-val">0</span>
+        </div>
+        <div class="metric-card" style="grid-column: span 2;">
+          <span class="metric-label">Top Selling Items</span>
+          <span id="metric-top" style="font-size: 1.15rem; font-weight: 600; color: #cbd5e1; margin-top: 4px;">None</span>
+        </div>
+      </div>
+
+      <div id="low-stock-summary-container" style="margin-top: 16px; display: none;">
+        <div style="color: #f87171; font-weight: 700; font-size: 1rem; margin-bottom: 6px;">⚠️ Low Stock Warnings:</div>
+        <div id="low-stock-list" style="color: #fca5a5; font-size: 1.05rem;"></div>
+      </div>
+    </section>
+
+    <!-- Stock Inventory Table -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.4rem;">Current Stock Inventory</h2>
+        <button id="refresh-stock-btn" class="btn" style="padding: 6px 14px; font-size: 0.95rem; background-color: var(--surface-border); color: #fff;">Refresh</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="stock-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="stock-table-body">
+            <!-- Populated dynamically via GET /stock -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>

@@ -3,10 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hisab Kitab</title>
+  <title>Hisab Kitab — Voice Billing</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <header>
+    <div class="logo-container">
+      <span style="font-size: 1.8rem;">🎙️</span>
+      <h1 class="logo-title">Hisab Kitab</h1>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">New Sale</a>
+      <a href="summary.html" class="nav-link">Summary & Stock</a>
+      <div class="language-select-wrapper">
+        <label for="language-select">Lang:</label>
+        <select id="language-select">
+          <option value="hi" selected>Hindi</option>
+          <option value="en">English</option>
+          <option value="ta">Tamil</option>
+          <option value="kn">Kannada</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Voice Capture Section -->
+    <section class="card mic-section">
+      <button id="mic-btn" class="mic-button" aria-label="Tap to speak" title="Tap to start speaking">
+        🎤
+      </button>
+      <div id="mic-status" class="mic-status">Tap microphone and speak sale</div>
+    </section>
+
+    <!-- Transcript and System Clarification Box -->
+    <section id="feedback-section" class="card transcript-card">
+      <div>
+        <div class="transcript-label">Recognized Speech</div>
+        <div id="transcript-text" class="transcript-text">Press mic and say e.g. "Rice 2 kg, Sugar 1 kg"...</div>
+      </div>
+      <div id="message-box" class="message-box" style="display: none;"></div>
+    </section>
+
+    <!-- Current Draft Bill Card -->
+    <section id="bill-card" class="card bill-card" style="display: none;">
+      <div class="bill-header">
+        <h2 class="bill-title">Current Bill</h2>
+        <span id="bill-badge" class="bill-badge">Draft</span>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="bill-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Rate (₹)</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="bill-items-body">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="total-row">
+        <span class="total-label">Total Amount:</span>
+        <span id="bill-total" class="total-amount">₹0</span>
+      </div>
+
+      <div class="bill-actions">
+        <button id="confirm-btn" class="btn btn-confirm">
+          ✓ Confirm Sale
+        </button>
+        <button id="cancel-btn" class="btn btn-cancel">
+          ✗ Cancel Bill
+        </button>
+      </div>
+    </section>
+  </main>
+
   <script src="app.js"></script>
 </body>
 </html>
