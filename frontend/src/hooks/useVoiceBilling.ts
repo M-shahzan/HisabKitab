@@ -106,23 +106,15 @@ export function useVoiceBilling() {
       // Spoken response playback with localized dialect voice
       if (response.message) {
         setSpokenMessage(response.message);
-<<<<<<< HEAD
-        ttsService.speak(response.message, getTTSLang(language), {
-=======
-        const voiceLang = langToSpeak || selectedLanguage;
-        ttsService.speak(response.message, LANG_TTS_CODE[voiceLang] || "en-IN", {
->>>>>>> origin/main
+        const voiceLang = (langToSpeak || language || selectedLanguage || "en") as SupportedLanguage;
+        ttsService.speak(response.message, LANG_TTS_CODE[voiceLang] || getTTSLang(language), {
           onStart: () => setIsSpeaking(true),
           onEnd: () => setIsSpeaking(false),
           onError: () => setIsSpeaking(false),
         });
       }
     },
-<<<<<<< HEAD
-    [language, getTTSLang]
-=======
-    [selectedLanguage]
->>>>>>> origin/main
+    [language, selectedLanguage, getTTSLang]
   );
 
   /**
@@ -213,15 +205,10 @@ export function useVoiceBilling() {
         return;
       }
 
-<<<<<<< HEAD
-      // Send to backend /voice with active bill_id (if appending or editing)
-      const response = await sendVoiceAudio(audioBlob, billId || undefined, language);
-      handleVoiceResponse(response);
-=======
-      // Send to backend /voice with active bill_id and selected language
-      const response = await sendVoiceAudio(audioBlob, billId || undefined, selectedLanguage);
-      handleVoiceResponse(response, selectedLanguage);
->>>>>>> origin/main
+      // Send to backend /voice with active bill_id and active language
+      const activeLang = language || selectedLanguage || "en";
+      const response = await sendVoiceAudio(audioBlob, billId || undefined, activeLang);
+      handleVoiceResponse(response, activeLang as SupportedLanguage);
     } catch (err: any) {
       audioRecorder.cancel();
 
@@ -260,11 +247,7 @@ export function useVoiceBilling() {
         err?.message || "Failed to process audio with server. Please try speaking again."
       );
     }
-<<<<<<< HEAD
-  }, [state, billId, language, handleVoiceResponse]);
-=======
-  }, [state, billId, selectedLanguage, handleVoiceResponse]);
->>>>>>> origin/main
+  }, [state, billId, language, selectedLanguage, handleVoiceResponse]);
 
   /**
    * Process manual text transcript (e.g. from editing text or demo presets)
@@ -295,20 +278,13 @@ export function useVoiceBilling() {
    */
   const replayAudio = useCallback(() => {
     if (!spokenMessage) return;
-<<<<<<< HEAD
-    ttsService.speak(spokenMessage, getTTSLang(language), {
-=======
-    ttsService.speak(spokenMessage, LANG_TTS_CODE[selectedLanguage] || "en-IN", {
->>>>>>> origin/main
+    const voiceLang = (language || selectedLanguage || "en") as SupportedLanguage;
+    ttsService.speak(spokenMessage, LANG_TTS_CODE[voiceLang] || getTTSLang(language), {
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
-<<<<<<< HEAD
-  }, [spokenMessage, language, getTTSLang]);
-=======
-  }, [spokenMessage, selectedLanguage]);
->>>>>>> origin/main
+  }, [spokenMessage, language, selectedLanguage, getTTSLang]);
 
   /**
    * Stop any ongoing speech playback
