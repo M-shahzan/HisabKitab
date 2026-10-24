@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/States";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
   PackagePlus,
   Search,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function StockPage() {
+  const { t, formatCurrency } = useLanguage();
   const {
     products,
     isLoading,
@@ -68,7 +70,7 @@ export default function StockPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to remove "${name}" from inventory?`)) {
+    if (window.confirm(t("stock.deleteConfirm"))) {
       await deleteProduct(id);
     }
   };
@@ -86,14 +88,14 @@ export default function StockPage() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Stock Management
+              {t("stock.title")}
             </h2>
             <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-              {counts.total} items
+              {counts.total} {t("stock.items")}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Monitor inventory quantities, unit types, and low-stock indicators
+            {t("stock.subtitle")}
           </p>
         </div>
 
@@ -107,12 +109,12 @@ export default function StockPage() {
             title="Refresh stock list from server"
           >
             <RefreshCw className={`h-4 w-4 mr-1 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{isRefreshing ? t("common.loading") : t("stock.refresh")}</span>
           </Button>
 
           <Button onClick={handleOpenAdd} className="shadow-sm min-h-[40px]">
             <PackagePlus className="h-4 w-4 mr-2" />
-            <span>Add New Product</span>
+            <span>{t("stock.addNew")}</span>
           </Button>
         </div>
       </div>
@@ -121,7 +123,7 @@ export default function StockPage() {
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div className="w-full sm:max-w-md">
           <Input
-            placeholder="Search by product name, unit, or category..."
+            placeholder={t("stock.searchPlaceholder")}
             icon={<Search className="h-4 w-4" />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,7 +141,7 @@ export default function StockPage() {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            All ({counts.total})
+            {t("stock.filterAll")} ({counts.total})
           </button>
           <button
             type="button"
@@ -150,7 +152,7 @@ export default function StockPage() {
                 : "text-slate-600 hover:text-amber-700"
             }`}
           >
-            Low Stock ({counts.lowStock})
+            {t("stock.filterLowStock")} ({counts.lowStock})
           </button>
           <button
             type="button"
@@ -161,7 +163,7 @@ export default function StockPage() {
                 : "text-slate-600 hover:text-red-700"
             }`}
           >
-            Out of Stock ({counts.outOfStock})
+            {t("stock.filterOutOfStock")} ({counts.outOfStock})
           </button>
         </div>
       </div>
@@ -169,7 +171,7 @@ export default function StockPage() {
       {/* Error state if fetch fails */}
       {error && (
         <ErrorState
-          title="Could not load stock items"
+          title={t("common.error")}
           message={error}
           onRetry={loadStock}
           className="my-6"
@@ -178,17 +180,17 @@ export default function StockPage() {
 
       {/* Products Display */}
       {isLoading ? (
-        <LoadingState message="Loading inventory stock catalog..." className="py-20" />
+        <LoadingState message={t("common.loading")} className="py-20" />
       ) : products.length === 0 ? (
         <EmptyState
           icon={Boxes}
-          title="No products found in stock"
+          title={t("stock.title")}
           description={
             searchQuery
               ? `No items found matching "${searchQuery}". Clear your search or add a new product.`
               : "Your inventory stock is empty. Add items or ensure backend database is seeded."
           }
-          actionLabel="Add Product"
+          actionLabel={t("stock.addNew")}
           onAction={handleOpenAdd}
         />
       ) : (
@@ -199,11 +201,11 @@ export default function StockPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-5 sm:px-6">Product & Category</th>
-                    <th className="py-3 px-4">Price</th>
-                    <th className="py-3 px-4">Available Stock</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-5 sm:px-6 text-right">Actions</th>
+                    <th className="py-3 px-5 sm:px-6">{t("stock.colName")}</th>
+                    <th className="py-3 px-4">{t("stock.colSku")}</th>
+                    <th className="py-3 px-4">{t("stock.colUnit")}</th>
+                    <th className="py-3 px-4">{t("stock.colStock")}</th>
+                    <th className="py-3 px-5 sm:px-6 text-right">{t("stock.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -225,7 +227,7 @@ export default function StockPage() {
                         <td className="py-3.5 px-4 font-bold text-slate-900 tabular-nums">
                           {prod.price > 0 ? (
                             <>
-                              {formatINR(prod.price)}{" "}
+                              {formatCurrency(prod.price)}{" "}
                               <span className="text-xs font-normal text-slate-500">/ {prod.unit}</span>
                             </>
                           ) : (
@@ -239,17 +241,17 @@ export default function StockPage() {
                           {isOutOfStock ? (
                             <Badge variant="red">
                               <XCircle className="h-3 w-3" />
-                              <span>Out of Stock</span>
+                              <span>{t("stock.outOfStockBadge")}</span>
                             </Badge>
                           ) : isLowStock ? (
                             <Badge variant="amber">
                               <AlertTriangle className="h-3 w-3" />
-                              <span>Low Stock</span>
+                              <span>{t("stock.lowStockBadge")}</span>
                             </Badge>
                           ) : (
                             <Badge variant="emerald">
                               <CheckCircle2 className="h-3 w-3" />
-                              <span>In Stock</span>
+                              <span>{t("stock.inStockBadge")}</span>
                             </Badge>
                           )}
                         </td>
@@ -259,7 +261,7 @@ export default function StockPage() {
                               type="button"
                               onClick={() => handleOpenEdit(prod)}
                               className="h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 flex items-center justify-center transition-colors"
-                              title="Edit product"
+                              title={t("stock.edit")}
                             >
                               <Edit2 className="h-3.5 w-3.5" />
                             </button>
@@ -267,7 +269,7 @@ export default function StockPage() {
                               type="button"
                               onClick={() => handleDelete(prod.id, prod.name)}
                               className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors"
-                              title="Delete product"
+                              title={t("stock.delete")}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -300,17 +302,17 @@ export default function StockPage() {
                         {isOutOfStock ? (
                           <Badge variant="red">
                             <XCircle className="h-3 w-3" />
-                            <span>Out</span>
+                            <span>{t("stock.outOfStockBadge")}</span>
                           </Badge>
                         ) : isLowStock ? (
                           <Badge variant="amber">
                             <AlertTriangle className="h-3 w-3" />
-                            <span>Low</span>
+                            <span>{t("stock.lowStockBadge")}</span>
                           </Badge>
                         ) : (
                           <Badge variant="emerald">
                             <CheckCircle2 className="h-3 w-3" />
-                            <span>OK</span>
+                            <span>{t("stock.inStockBadge")}</span>
                           </Badge>
                         )}
                       </div>
@@ -318,14 +320,14 @@ export default function StockPage() {
 
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
                       <div>
-                        <span className="text-slate-500">Price: </span>
+                        <span className="text-slate-500">{t("stock.colSku")}: </span>
                         <span className="font-bold text-slate-900">
-                          {prod.price > 0 ? formatINR(prod.price) : "Standard"}
+                          {prod.price > 0 ? formatCurrency(prod.price) : "Standard"}
                         </span>
                         <span className="text-slate-400">/{prod.unit}</span>
                       </div>
                       <div>
-                        <span className="text-slate-500">Stock: </span>
+                        <span className="text-slate-500">{t("stock.colStock")}: </span>
                         <span className="font-bold text-slate-900">
                           {formatQuantity(prod.stockQuantity, prod.unit)}
                         </span>

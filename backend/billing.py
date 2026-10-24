@@ -10,6 +10,7 @@ from backend.db import get_db
 bills: dict[str, dict[str, Any]] = {}
 confirmed_bills: set[str] = set()
 cancelled_bills: set[str] = set()
+confirmed_bills_cache: dict[str, dict[str, Any]] = {}
 
 
 def _format_num(val: float) -> int | float:
@@ -24,13 +25,15 @@ def generate_bill_id() -> str:
 
 
 def get_bill(bill_id: str) -> dict[str, Any]:
-    """Retrieve a copy of a draft bill by bill_id.
+    """Retrieve a copy of a draft or confirmed bill by bill_id.
 
     Raises KeyError if bill_id does not exist.
     """
-    if bill_id not in bills:
-        raise KeyError(f"Bill '{bill_id}' not found.")
-    return copy.deepcopy(bills[bill_id])
+    if bill_id in bills:
+        return copy.deepcopy(bills[bill_id])
+    if bill_id in confirmed_bills_cache:
+        return copy.deepcopy(confirmed_bills_cache[bill_id])
+    raise KeyError(f"Bill '{bill_id}' not found.")
 
 
 def clear_bills() -> None:
@@ -38,6 +41,7 @@ def clear_bills() -> None:
     bills.clear()
     confirmed_bills.clear()
     cancelled_bills.clear()
+    confirmed_bills_cache.clear()
 
 
 def create_draft_bill(
@@ -65,9 +69,33 @@ def create_draft_bill(
 
     actual_bill_id = bill_id if bill_id else generate_bill_id()
 
-    # Pre-validate and lookup catalogue items
     lines: list[dict[str, Any]] = []
-    lines_by_item_id: dict[int, dict[str, Any]] = {}
+    _process_items_into_lines(items, lines, db_path=db_path)
+    total_amount = _format_num(sum(l["amount"] for l in lines))
+
+    bill = {
+        "bill_id": actual_bill_id,
+        "lines": lines,
+        "total": total_amount,
+        "status": "draft",
+    }
+
+    bills[actual_bill_id] = bill
+    return copy.deepcopy(bill)
+
+
+def _process_items_into_lines(
+    items: list[dict[str, Any]],
+    lines: list[dict[str, Any]],
+    db_path: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """Validate and merge items into a list of draft bill lines."""
+    if not isinstance(items, list):
+        raise ValueError(f"Items must be a list, got {type(items).__name__}")
+    if len(items) == 0:
+        raise ValueError("Cannot process empty items list.")
+
+    lines_by_item_id: dict[int, dict[str, Any]] = {int(l["item_id"]): l for l in lines}
 
     with get_db(db_path) as conn:
         cursor = conn.cursor()
@@ -118,6 +146,8 @@ def create_draft_bill(
                 # Merge quantity if item_id already in bill
                 existing = lines_by_item_id[item_id]
                 existing["qty"] = _format_num(existing["qty"] + qty)
+                if explicit_price is not None:
+                    existing["unit_price"] = _format_num(unit_price)
                 existing["amount"] = _format_num(existing["qty"] * existing["unit_price"])
             else:
                 line_amount = _format_num(qty * unit_price)
@@ -132,17 +162,45 @@ def create_draft_bill(
                 lines.append(new_line)
                 lines_by_item_id[item_id] = new_line
 
-    total_amount = _format_num(sum(l["amount"] for l in lines))
+    return lines
 
-    bill = {
-        "bill_id": actual_bill_id,
-        "lines": lines,
-        "total": total_amount,
-        "status": "draft",
-    }
 
-    bills[actual_bill_id] = bill
-    return copy.deepcopy(bill)
+def add_items_to_draft_bill(
+    bill_id: str,
+    items: list[dict[str, Any]],
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Add new items to an existing in-memory draft bill or merge quantities.
+
+    If an item already exists in the bill, its quantity is increased and
+    line amount and bill total are updated.
+    If an item is new, it is appended as a new line.
+
+    Raises:
+    - ValueError: if bill is already confirmed/cancelled or not in draft state.
+    - KeyError: if bill_id does not exist.
+    """
+    if bill_id in confirmed_bills:
+        raise ValueError(f"Cannot edit confirmed bill '{bill_id}'.")
+    if bill_id in cancelled_bills:
+        raise ValueError(f"Cannot edit cancelled bill '{bill_id}'.")
+    if bill_id not in bills:
+        raise KeyError(f"Bill '{bill_id}' not found.")
+
+    working_bill = copy.deepcopy(bills[bill_id])
+    if working_bill.get("status") != "draft":
+        raise ValueError(f"Bill '{bill_id}' is not in draft state.")
+
+    working_lines = working_bill.get("lines", [])
+    _process_items_into_lines(items, working_lines, db_path=db_path)
+    working_bill["lines"] = working_lines
+    working_bill["total"] = _format_num(sum(l["amount"] for l in working_lines))
+
+    bills[bill_id] = working_bill
+    return copy.deepcopy(working_bill)
+
+
+add_items_to_bill = add_items_to_draft_bill
 
 
 def edit_draft_bill(bill_id: str, edit: dict[str, Any]) -> dict[str, Any]:
@@ -308,13 +366,17 @@ def confirm_bill(bill_id: str, db_path: str | Path | None = None) -> dict[str, A
 
     # 3. Mark as confirmed
     confirmed_bills.add(bill_id)
+    bill = bills.pop(bill_id)
     bill["status"] = "confirmed"
     bill["sale_id"] = sale_id
+    confirmed_bills_cache[bill_id] = bill
 
     return {
         "sale_id": sale_id,
         "total": bill["total"],
         "low_stock": low_stock,
+        "lines": copy.deepcopy(bill["lines"]),
+        "bill_id": bill_id,
     }
 
 

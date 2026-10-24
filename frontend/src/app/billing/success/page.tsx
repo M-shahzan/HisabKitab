@@ -7,12 +7,14 @@ import { formatINR, formatDateTime } from "@/lib/formatters";
 import { ConfirmSaleResponse } from "@/types/billing";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Check, CheckCircle2, ArrowRight, Printer, LayoutDashboard, Sparkles, PackageCheck } from "lucide-react";
+import { Check, CheckCircle2, ArrowRight, Printer, LayoutDashboard, Sparkles, PackageCheck, Receipt } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function SaleSuccessPage() {
   const router = useRouter();
+  const { t, formatCurrency } = useLanguage();
   const [sale, setSale] = useState<ConfirmSaleResponse | null>(null);
 
   useEffect(() => {
@@ -62,13 +64,13 @@ export default function SaleSuccessPage() {
             </motion.div>
 
             <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2">
-              Payment Confirmed
+              {t("success.paymentConfirmed")}
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              Sale Confirmed!
+              {t("success.title")}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Your transaction has been recorded successfully in the store ledger.
+              {t("success.message")}
             </p>
           </div>
 
@@ -76,47 +78,79 @@ export default function SaleSuccessPage() {
           <CardContent className="p-6 pt-2">
             <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-3">
               <div className="flex justify-between items-center text-xs text-slate-500 pb-2 border-b border-slate-200/60">
-                <span>Bill Number:</span>
+                <span>{t("success.billNumber")}</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   #{sale.billNumber}
                 </span>
               </div>
 
               <div className="flex justify-between items-center text-xs text-slate-500 pb-2 border-b border-slate-200/60">
-                <span>Total Items:</span>
-                <span className="font-semibold text-slate-800">{sale.itemCount} items</span>
+                <span>{t("success.totalItems")}</span>
+                <span className="font-semibold text-slate-800">{sale.itemCount} {t("common.items")}</span>
               </div>
 
               <div className="flex justify-between items-center text-xs text-slate-500 pb-2 border-b border-slate-200/60">
-                <span>Transaction Time:</span>
+                <span>{t("success.transactionTime")}</span>
                 <span className="font-medium text-slate-800">
                   {formatDateTime(sale.timestamp)}
                 </span>
               </div>
 
               <div className="flex justify-between items-baseline pt-1">
-                <span className="text-sm font-bold text-slate-700">Total Amount Paid:</span>
+                <span className="text-sm font-bold text-slate-700">{t("success.grandTotal")}</span>
                 <span className="text-2xl font-extrabold text-emerald-800 tabular-nums">
-                  {formatINR(sale.total)}
+                  {formatCurrency(sale.total)}
                 </span>
               </div>
             </div>
+
+            {/* Confirmed Bill Line Items Table */}
+            {sale.lines && sale.lines.length > 0 && (
+              <div className="mt-4 border border-slate-200/90 rounded-2xl overflow-hidden text-left bg-white shadow-xs">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-100/90 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3 text-left">{t("bill.product")}</th>
+                      <th className="py-2.5 px-3 text-right">{t("bill.quantity")}</th>
+                      <th className="py-2.5 px-3 text-right">{t("bill.unitPrice")}</th>
+                      <th className="py-2.5 px-3 text-right">{t("bill.lineTotal")}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {sale.lines.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3 font-semibold text-slate-900">{item.name}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">{item.qty} {item.unit}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-600">{formatCurrency(item.unit_price)}</td>
+                        <td className="py-2.5 px-3 text-right font-bold text-slate-900">{formatCurrency(item.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-emerald-50/70 border-t border-emerald-100 font-bold">
+                    <tr>
+                      <td colSpan={3} className="py-2.5 px-3 text-left text-slate-800 font-bold">{t("bill.grandTotal")}</td>
+                      <td className="py-2.5 px-3 text-right text-emerald-800 text-sm font-extrabold">{formatCurrency(sale.total)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
 
             {/* Stock Confirmation alert */}
             <div className="mt-4 flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/60 text-xs text-left">
               <PackageCheck className="h-4 w-4 text-emerald-600 shrink-0" />
               <span>
-                Inventory stock deducted automatically on server ({sale.stockUpdates?.length || sale.itemCount} items updated).
+                {t("success.autoStockDeducted")} ({sale.stockUpdates?.length || sale.itemCount} {t("common.items")}).
               </span>
             </div>
 
             {/* Low-stock warnings returned by backend confirm endpoint */}
             {sale.lowStockItems && sale.lowStockItems.length > 0 && (
               <div className="mt-3 p-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-200/80 text-xs text-left flex items-start gap-2">
-                <span className="font-bold text-amber-700">⚠️ Low Stock Warning:</span>
+                <span className="font-bold text-amber-700">⚠️ {t("success.lowStockWarning")}</span>
                 <span>
                   {sale.lowStockItems
-                    .map((item) => `${item.name || `Item ${item.item_id}`} (${item.quantity ?? 0} remaining)`)
+                    .map((item) => `${item.name || `Item ${item.item_id}`} (${item.quantity ?? 0} ${t("summary.remaining")})`)
                     .join(", ")}
                 </span>
               </div>
@@ -126,7 +160,7 @@ export default function SaleSuccessPage() {
             <div className="mt-6 space-y-3">
               <Link href="/" className="block w-full">
                 <Button size="lg" className="w-full text-base font-bold shadow-sm">
-                  <span>Start New Bill</span>
+                  <span>{t("success.startNewBill")}</span>
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
@@ -138,13 +172,13 @@ export default function SaleSuccessPage() {
                   className="w-full"
                 >
                   <Printer className="h-4 w-4 mr-1.5 text-slate-600" />
-                  <span>Print Receipt</span>
+                  <span>{t("success.printReceipt")}</span>
                 </Button>
 
-                <Link href="/dashboard" className="w-full">
+                <Link href="/bills" className="w-full">
                   <Button variant="ghost" className="w-full">
-                    <LayoutDashboard className="h-4 w-4 mr-1.5 text-slate-600" />
-                    <span>Dashboard</span>
+                    <Receipt className="h-4 w-4 mr-1.5 text-slate-600" />
+                    <span>{t("nav.billsHistory")}</span>
                   </Button>
                 </Link>
               </div>

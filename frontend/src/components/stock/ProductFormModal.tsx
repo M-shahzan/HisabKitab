@@ -5,6 +5,7 @@ import { Product, ProductFormData, UnitOfMeasure } from "@/types/product";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface ProductFormModalProps {
   open: boolean;
@@ -30,6 +31,7 @@ export function ProductFormModal({
   product,
   onSubmit,
 }: ProductFormModalProps) {
+  const { t } = useLanguage();
   const isEditing = !!product;
 
   const [name, setName] = useState("");
@@ -108,8 +110,8 @@ export function ProductFormModal({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={isEditing ? "Edit Product" : "Add New Grocery Product"}
-      description="Update catalog prices, units, and inventory thresholds"
+      title={isEditing ? t("stock.edit") : t("stock.addNew")}
+      description={t("stock.subtitle")}
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -206,10 +208,10 @@ export function ProductFormModal({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" isLoading={isSubmitting}>
-            {isEditing ? "Save Changes" : "Add to Stock"}
+            {isEditing ? t("common.save") : t("stock.addNew")}
           </Button>
         </div>
       </form>

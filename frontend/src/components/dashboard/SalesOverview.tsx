@@ -4,6 +4,7 @@ import React from "react";
 import { formatINR } from "@/lib/formatters";
 import { TrendingUp, ArrowUpRight, Receipt, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface SalesOverviewProps {
   todaySales: number;
@@ -16,6 +17,8 @@ export function SalesOverview({
   salesChangePercent,
   transactionsCount,
 }: SalesOverviewProps) {
+  const { t, formatCurrency } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -32,14 +35,14 @@ export function SalesOverview({
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/20 flex items-center gap-1">
               <Sparkles className="h-3 w-3 text-emerald-300" />
-              Today&apos;s Revenue
+              {t("dashboard.todaySales")}
             </span>
-            <span className="text-[11px] text-emerald-200/60 font-medium">Demonstration Data</span>
+            <span className="text-[11px] text-emerald-200/60 font-medium">{t("dashboard.todaySalesSub")}</span>
           </div>
 
           <div className="flex items-baseline gap-3">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight tabular-nums text-white">
-              {formatINR(todaySales)}
+              {formatCurrency(todaySales)}
             </h2>
             <div className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 border border-emerald-400/20">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -48,7 +51,7 @@ export function SalesOverview({
           </div>
 
           <p className="text-xs sm:text-sm text-emerald-100/70 mt-1 font-medium">
-            Compared with ₹7,360 yesterday • Healthy business growth
+            {t("dashboard.vsYesterday")}
           </p>
         </div>
 
@@ -60,11 +63,11 @@ export function SalesOverview({
             </div>
             <div>
               <p className="text-[11px] text-emerald-200/70 font-semibold uppercase tracking-wider">
-                Sales Count
+                {t("dashboard.transactions")}
               </p>
               <p className="text-xl font-bold tabular-nums text-white">
                 {transactionsCount}{" "}
-                <span className="text-xs font-normal text-emerald-200/60">bills</span>
+                <span className="text-xs font-normal text-emerald-200/60">{t("common.items")}</span>
               </p>
             </div>
           </div>
@@ -73,10 +76,10 @@ export function SalesOverview({
 
           <div>
             <p className="text-[11px] text-emerald-200/70 font-semibold uppercase tracking-wider">
-              Avg Ticket
+              {t("dashboard.averageBill")}
             </p>
             <p className="text-xl font-bold tabular-nums text-white">
-              {formatINR(todaySales / (transactionsCount || 1))}
+              {formatCurrency(todaySales / (transactionsCount || 1))}
             </p>
           </div>
         </div>

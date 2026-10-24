@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.billing import (
+    add_items_to_draft_bill,
     bills,
     cancel_bill,
     confirm_bill,
@@ -20,8 +21,10 @@ from backend.db import get_db
 from backend.corrections import log_correction
 from backend.matching import find_best_match, match_unknown_word
 from backend.parser import parse, validate_parser_response
-from backend.stt import transcribe
+from backend.stock import adjust_stock, adjust_stock_items
+from backend.stt import transcribe, SUPPORTED_LANGUAGES, normalize_language
 from backend.summary import get_sales_summary
+from backend.history import get_all_bills, get_bill_by_id, get_transactions_history
 
 logger = logging.getLogger("hisab_kitab")
 
@@ -48,6 +51,13 @@ class BillActionRequest(BaseModel):
 class CorrectionRequest(BaseModel):
     heard_text: str
     item_id: int
+
+
+class StockAdjustRequest(BaseModel):
+    item_id: int
+    quantity: float
+    action: str = "stock_in"
+    unit: str | None = None
 
 
 @app.get("/health")
@@ -88,6 +98,25 @@ def get_stock():
         return []
 
 
+@app.post("/stock/adjust")
+def stock_adjust_endpoint(payload: StockAdjustRequest) -> dict[str, Any]:
+    """Adjust inventory quantity for an item (stock in / stock out)."""
+    try:
+        return adjust_stock(
+            item_id=payload.item_id,
+            qty=payload.quantity,
+            action=payload.action,
+            unit=payload.unit,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'\""))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Stock adjustment error: %s", type(e).__name__)
+        raise HTTPException(status_code=500, detail="Failed to adjust stock.")
+
+
 @app.get("/summary")
 def summary_endpoint(date: str | None = None) -> dict[str, Any]:
     """Return daily sales summary (Section 4.3).
@@ -102,6 +131,40 @@ def summary_endpoint(date: str | None = None) -> dict[str, Any]:
     except Exception as e:
         logger.error("Summary query error: %s", type(e).__name__)
         raise HTTPException(status_code=500, detail="Failed to retrieve sales summary.")
+
+
+@app.get("/bills")
+def get_bills_endpoint() -> list[dict[str, Any]]:
+    """Retrieve all confirmed sales bills from SQLite, ordered by newest first."""
+    try:
+        return get_all_bills()
+    except Exception as e:
+        logger.error("Failed to retrieve bills: %s", type(e).__name__)
+        raise HTTPException(status_code=500, detail="Failed to retrieve bills history.")
+
+
+@app.get("/bills/{sale_id}")
+def get_bill_detail_endpoint(sale_id: str) -> dict[str, Any]:
+    """Retrieve full bill details with sale-time prices and line items."""
+    try:
+        return get_bill_by_id(sale_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e).strip("'\""))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to retrieve bill %s: %s", sale_id, type(e).__name__)
+        raise HTTPException(status_code=500, detail="Failed to retrieve bill details.")
+
+
+@app.get("/transactions")
+def get_transactions_endpoint() -> list[dict[str, Any]]:
+    """Retrieve confirmed sales as transaction records for dashboard and summary views."""
+    try:
+        return get_transactions_history()
+    except Exception as e:
+        logger.error("Failed to retrieve transactions: %s", type(e).__name__)
+        raise HTTPException(status_code=500, detail="Failed to retrieve transactions.")
 
 
 @app.post("/confirm")
@@ -154,6 +217,15 @@ def correction_endpoint(payload: CorrectionRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail="Failed to log correction.")
 
 
+@app.get("/languages")
+def get_supported_languages() -> dict[str, Any]:
+    """Return all supported regional and national languages with their metadata."""
+    return {
+        "default": "hi",
+        "languages": list(SUPPORTED_LANGUAGES.values()),
+    }
+
+
 @app.post("/voice")
 async def voice_endpoint(
     audio: UploadFile = File(None),
@@ -174,11 +246,12 @@ async def voice_endpoint(
         raise HTTPException(status_code=400, detail="Audio file cannot be empty.")
 
     t0 = time.perf_counter()
+    norm_lang = normalize_language(language)
 
     # 1. Transcribe audio to text
     try:
         t_stt_start = time.perf_counter()
-        transcript = transcribe(audio_bytes, language=language)
+        transcript = transcribe(audio_bytes, language=norm_lang)
         stt_duration = time.perf_counter() - t_stt_start
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -202,7 +275,7 @@ async def voice_endpoint(
     # 3. Parse transcript into structured intent and items
     try:
         t_parse_start = time.perf_counter()
-        parser_res = parse(transcript, catalog=catalog, current_bill=current_bill)
+        parser_res = parse(transcript, catalog=catalog, current_bill=current_bill, language=norm_lang)
         parser_res = validate_parser_response(parser_res)
         parse_duration = time.perf_counter() - t_parse_start
     except Exception as e:
@@ -226,7 +299,10 @@ async def voice_endpoint(
         items = parser_res.get("items", [])
         if items:
             try:
-                bill = create_draft_bill(items=items)
+                if bill_id and current_bill and current_bill.get("status") == "draft":
+                    bill = add_items_to_draft_bill(bill_id, items=items)
+                else:
+                    bill = create_draft_bill(items=items)
                 lines_summary = ", ".join(f"{l['name']} {l['qty']} {l['unit']}" for l in bill["lines"])
                 message = f"{lines_summary}. Total {bill['total']} rupees. Save?"
             except ValueError as e:
@@ -328,6 +404,20 @@ async def voice_endpoint(
         else:
             message = "Could not identify the item to check stock. Please specify the product name."
 
+    elif intent in ("stock_in", "stock_out"):
+        items = parser_res.get("items", [])
+        if items:
+            try:
+                res = adjust_stock_items(items=items, action=intent)
+                message = res["message"]
+            except (ValueError, KeyError) as e:
+                message = str(e)
+            except Exception as e:
+                logger.error("Stock adjustment failed: %s", type(e).__name__)
+                message = "Failed to adjust stock."
+        else:
+            message = parser_res.get("needs_clarification") or "Could not identify items for stock adjustment."
+
     else:  # unclear
         message = parser_res.get("needs_clarification") or "Sorry, I could not understand. Please repeat."
 
@@ -340,9 +430,16 @@ async def voice_endpoint(
         total_duration * 1000,
     )
 
-    return {
+    response_data: dict[str, Any] = {
         "transcript": transcript,
         "intent": intent,
         "bill": bill,
         "message": message,
     }
+    if intent == "confirm" and "confirm_res" in locals() and confirm_res:
+        response_data["sale_id"] = confirm_res.get("sale_id")
+        response_data["lines"] = confirm_res.get("lines")
+        response_data["total"] = confirm_res.get("total")
+        response_data["low_stock"] = confirm_res.get("low_stock")
+
+    return response_data

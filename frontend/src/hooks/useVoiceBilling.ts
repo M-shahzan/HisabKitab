@@ -23,6 +23,7 @@ import { multiplyMoney, sumMoney } from "@/lib/formatters";
 
 export function useVoiceBilling() {
   const [state, setState] = useState<BillingState>("idle");
+  const [language, setLanguage] = useState<string>("kn");
   const [transcript, setTranscript] = useState<string>("");
   const [items, setItems] = useState<BillItem[]>([]);
   const [billId, setBillId] = useState<string | null>(null);
@@ -39,6 +40,14 @@ export function useVoiceBilling() {
   const subtotal = sumMoney(items.map((i) => i.lineTotal));
   const total = subtotal;
 
+  const getTTSLang = useCallback((langCode: string) => {
+    const map: Record<string, string> = {
+      kn: "kn-IN", hi: "hi-IN", ta: "ta-IN", te: "te-IN", mr: "mr-IN",
+      gu: "gu-IN", bn: "bn-IN", ml: "ml-IN", pa: "pa-IN", ur: "ur-IN", en: "en-IN",
+    };
+    return map[langCode] || "en-IN";
+  }, []);
+
   /**
    * Helper to process a voice API response and sync state
    */
@@ -54,22 +63,27 @@ export function useVoiceBilling() {
           const mapped = response.bill.lines.map(mapBackendLineToBillItem);
           setItems(mapped);
         }
+        setState("review");
+      } else {
+        // If not a billing intent or no draft bill exists, don't enter review with empty bill
+        if (response.intent !== "stock_in" && response.intent !== "stock_out" && response.intent !== "query_stock" && response.intent !== "query_summary") {
+          setState("idle");
+        }
       }
 
       setHasUnsavedEdits(false);
-      setState("review");
 
       // Spoken response playback
       if (response.message) {
         setSpokenMessage(response.message);
-        ttsService.speak(response.message, "hi-IN", {
+        ttsService.speak(response.message, getTTSLang(language), {
           onStart: () => setIsSpeaking(true),
           onEnd: () => setIsSpeaking(false),
           onError: () => setIsSpeaking(false),
         });
       }
     },
-    []
+    [language, getTTSLang]
   );
 
   /**
@@ -123,7 +137,7 @@ export function useVoiceBilling() {
       }
 
       // Send to backend /voice with active bill_id (if appending or editing)
-      const response = await sendVoiceAudio(audioBlob, billId || undefined, "hi");
+      const response = await sendVoiceAudio(audioBlob, billId || undefined, language);
       handleVoiceResponse(response);
     } catch (err: any) {
       audioRecorder.cancel();
@@ -132,7 +146,7 @@ export function useVoiceBilling() {
         err?.message || "Failed to process audio with server. Please try speaking again."
       );
     }
-  }, [state, billId, handleVoiceResponse]);
+  }, [state, billId, language, handleVoiceResponse]);
 
   /**
    * Process manual text transcript (e.g. from editing text or demo presets)
@@ -162,12 +176,12 @@ export function useVoiceBilling() {
    */
   const replayAudio = useCallback(() => {
     if (!spokenMessage) return;
-    ttsService.speak(spokenMessage, "hi-IN", {
+    ttsService.speak(spokenMessage, getTTSLang(language), {
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
-  }, [spokenMessage]);
+  }, [spokenMessage, language, getTTSLang]);
 
   /**
    * Stop any ongoing speech playback
@@ -279,6 +293,17 @@ export function useVoiceBilling() {
       const lowStockList = response.low_stock || [];
       setLowStockWarnings(lowStockList);
 
+      const confirmedLines = (response.lines && Array.isArray(response.lines) && response.lines.length > 0)
+        ? response.lines
+        : items.map((i) => ({
+            item_id: i.itemId || 0,
+            name: i.productName,
+            qty: i.quantity,
+            unit: i.unit,
+            unit_price: i.unitPrice,
+            amount: i.lineTotal,
+          }));
+
       const saleReceipt: ConfirmSaleResponse = {
         success: true,
         billNumber: String(response.sale_id || response.billNumber || billId),
@@ -286,6 +311,7 @@ export function useVoiceBilling() {
         total: response.total ?? total,
         itemCount: items.length,
         timestamp: new Date().toISOString(),
+        lines: confirmedLines,
         lowStockItems: lowStockList,
         stockUpdates: items.map((i) => ({
           productId: i.productId,
@@ -346,6 +372,8 @@ export function useVoiceBilling() {
     updateItemQuantity,
     removeItem,
     addItem,
+    language,
+    setLanguage,
     resetBill: cancelSale,
     confirmSale,
   };

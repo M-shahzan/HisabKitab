@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { Product } from "@/types/product";
 import { BillItem } from "@/types/billing";
-import { formatINR } from "@/lib/formatters";
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Search, Plus, Check } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface ProductPickerProps {
   open: boolean;
@@ -22,6 +22,7 @@ export function ProductPicker({
   products,
   onSelectProduct,
 }: ProductPickerProps) {
+  const { t, formatCurrency } = useLanguage();
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
@@ -51,13 +52,13 @@ export function ProductPicker({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Add Item from Inventory"
-      description="Search items by English or Hindi name"
+      title={t("order.addItemManually")}
+      description={t("stock.subtitle")}
       maxWidth="md"
     >
       <div className="space-y-4">
         <Input
-          placeholder="Search rice, atta, oil, tea..."
+          placeholder={t("stock.searchPlaceholder")}
           icon={<Search className="h-4 w-4" />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -68,7 +69,7 @@ export function ProductPicker({
         <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 border border-slate-100 rounded-xl">
           {filtered.length === 0 ? (
             <div className="p-6 text-center text-xs text-slate-500">
-              No matching products found.
+              {t("common.none")}
             </div>
           ) : (
             filtered.map((prod) => {
@@ -85,12 +86,12 @@ export function ProductPicker({
                     <p className="text-sm font-semibold text-slate-900">{prod.name}</p>
                     <p className="text-xs text-slate-500">
                       {prod.hindiName ? `${prod.hindiName} • ` : ""}
-                      {formatINR(prod.price)} / {prod.unit}
+                      {formatCurrency(prod.price)} / {prod.unit}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-emerald-700">
-                      {formatINR(prod.price)}
+                      {formatCurrency(prod.price)}
                     </span>
                     {isSelected && <Check className="h-4 w-4 text-emerald-600" />}
                   </div>
@@ -104,9 +105,9 @@ export function ProductPicker({
         {selectedProduct && (
           <div className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-200">
             <div>
-              <p className="text-xs font-semibold text-slate-700">Quantity ({selectedProduct.unit})</p>
+              <p className="text-xs font-semibold text-slate-700">{t("bill.quantity")} ({selectedProduct.unit})</p>
               <p className="text-xs text-slate-500">
-                Total: {formatINR(selectedProduct.price * quantity)}
+                {t("bill.lineTotal")}: {formatCurrency(selectedProduct.price * quantity)}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -120,7 +121,7 @@ export function ProductPicker({
               />
               <Button size="sm" onClick={handleAdd}>
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                Add
+                {t("bill.addItem")}
               </Button>
             </div>
           </div>

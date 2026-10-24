@@ -33,8 +33,10 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function DailySummaryPage() {
+  const { t, formatCurrency } = useLanguage();
   const [selectedDate, setSelectedDate] = useState<string>(
     () => new Date().toISOString().split("T")[0]
   );
@@ -72,13 +74,13 @@ export default function DailySummaryPage() {
   }, [selectedDate]);
 
   if (isLoading) {
-    return <LoadingState message="Generating sales summary & inventory status..." className="py-24" />;
+    return <LoadingState message={t("common.loading")} className="py-24" />;
   }
 
   if (error || !summary) {
     return (
       <ErrorState
-        title="Could not load daily summary"
+        title={t("common.error")}
         message={error || "An unexpected error occurred while fetching the sales report."}
         onRetry={() => loadData()}
         className="my-12"
@@ -107,14 +109,14 @@ export default function DailySummaryPage() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Daily Sales Summary
+              {t("summary.title")}
             </h2>
             <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Live Ledger
+              {t("summary.today")}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Overview of total sales, bill count, payment splits, and low stock warnings
+            {t("summary.subtitle")}
           </p>
         </div>
 
@@ -139,7 +141,7 @@ export default function DailySummaryPage() {
             title="Refresh summary data"
           >
             <RefreshCw className={`h-3.5 w-3.5 mr-1 text-slate-600 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+            <span>{isRefreshing ? t("common.loading") : t("stock.refresh")}</span>
           </Button>
         </div>
       </div>
@@ -149,44 +151,43 @@ export default function DailySummaryPage() {
         {/* Total Sales */}
         <Card className="p-5 border-emerald-200/60 bg-gradient-to-br from-emerald-50/50 via-white to-white shadow-card">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-            <span>Total Sales for the Day</span>
+            <span>{t("summary.salesToday")}</span>
             <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-emerald-800 mt-2 tabular-nums">
-            {formatINR(summary.totalRevenue)}
+            {formatCurrency(summary.totalRevenue)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Confirmed revenue for {selectedDate}</p>
+          <p className="text-xs text-slate-500 mt-1">{selectedDate}</p>
         </Card>
 
         {/* Total Orders / Bills */}
         <Card className="p-5 shadow-card">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-            <span>Number of Bills</span>
+            <span>{t("summary.billsCount")}</span>
             <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
               <Receipt className="h-4 w-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-2 tabular-nums">
-            {summary.totalOrders}{" "}
-            <span className="text-sm font-normal text-slate-500">bills</span>
+            {summary.totalOrders}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Processed transactions</p>
+          <p className="text-xs text-slate-500 mt-1">{t("summary.completed")}</p>
         </Card>
 
         {/* Avg Ticket Value */}
         <Card className="p-5 shadow-card">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-            <span>Average Bill</span>
+            <span>{t("summary.averageTicket")}</span>
             <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
               <Calculator className="h-4 w-4" />
             </div>
           </div>
           <p className="text-3xl font-extrabold text-slate-900 mt-2 tabular-nums">
-            {formatINR(summary.avgOrderValue)}
+            {formatCurrency(summary.avgOrderValue)}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Average basket size per customer</p>
+          <p className="text-xs text-slate-500 mt-1">{t("dashboard.perBasket")}</p>
         </Card>
       </div>
 
@@ -196,17 +197,17 @@ export default function DailySummaryPage() {
           <CardTitle className="text-base flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <span>Low-Stock Items ({lowStockList.length})</span>
+              <span>{t("summary.lowStockAlert")} ({lowStockList.length})</span>
             </div>
             {lowStockList.length > 0 && (
-              <Badge variant="amber">Attention Needed</Badge>
+              <Badge variant="amber">{t("dashboard.needsReorder")}</Badge>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {lowStockList.length === 0 ? (
             <p className="text-xs text-slate-500 py-2">
-              All inventory levels are healthy. No items are currently below low-stock thresholds.
+              {t("dashboard.healthy")}
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -225,7 +226,7 @@ export default function DailySummaryPage() {
                     <span className="text-xs font-extrabold text-amber-700 tabular-nums">
                       {item.quantity} {item.unit || "units"}
                     </span>
-                    <p className="text-[10px] text-red-600 font-semibold">Low</p>
+                    <p className="text-[10px] text-red-600 font-semibold">{t("stock.lowStockBadge")}</p>
                   </div>
                 </div>
               ))}
@@ -237,7 +238,7 @@ export default function DailySummaryPage() {
       {/* Payment Modes Split */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="text-base">Payment Method Breakdown</CardTitle>
+          <CardTitle className="text-base">{t("bill.paymentMode")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -246,9 +247,9 @@ export default function DailySummaryPage() {
                 <QrCode className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-semibold uppercase">UPI Payments</p>
+                <p className="text-xs text-slate-500 font-semibold uppercase">{t("summary.upiDigital")}</p>
                 <p className="text-lg font-bold text-slate-900 tabular-nums">
-                  {formatINR(summary.upiRevenue)}
+                  {formatCurrency(summary.upiRevenue)}
                 </p>
               </div>
             </div>
@@ -258,9 +259,9 @@ export default function DailySummaryPage() {
                 <Wallet className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-semibold uppercase">Cash Collected</p>
+                <p className="text-xs text-slate-500 font-semibold uppercase">{t("summary.cashCollections")}</p>
                 <p className="text-lg font-bold text-slate-900 tabular-nums">
-                  {formatINR(summary.cashRevenue)}
+                  {formatCurrency(summary.cashRevenue)}
                 </p>
               </div>
             </div>
@@ -270,9 +271,9 @@ export default function DailySummaryPage() {
                 <BookOpen className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-semibold uppercase">Khata Credit</p>
+                <p className="text-xs text-slate-500 font-semibold uppercase">{t("summary.khataCredit")}</p>
                 <p className="text-lg font-bold text-slate-900 tabular-nums">
-                  {formatINR(summary.khataRevenue)}
+                  {formatCurrency(summary.khataRevenue)}
                 </p>
               </div>
             </div>
@@ -287,7 +288,7 @@ export default function DailySummaryPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span>Sales Activity Throughout the Day</span>
+              <span>{t("summary.hourlyTrend")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -304,7 +305,7 @@ export default function DailySummaryPage() {
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} />
                   <Tooltip
-                    formatter={(val: any) => [formatINR(val), "Revenue"]}
+                    formatter={(val: any) => [formatCurrency(val), "Revenue"]}
                     contentStyle={{ borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "12px" }}
                   />
                   <Area
@@ -326,7 +327,7 @@ export default function DailySummaryPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart2 className="h-4 w-4 text-emerald-600" />
-              <span>Top-Selling Items</span>
+              <span>{t("summary.topProducts")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -337,7 +338,7 @@ export default function DailySummaryPage() {
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#64748B" }} tickLine={false} />
                   <Tooltip
-                    formatter={(val: any) => [formatINR(val), "Sales"]}
+                    formatter={(val: any) => [formatCurrency(val), "Sales"]}
                     contentStyle={{ borderRadius: "12px", border: "1px solid #E2E8F0", fontSize: "12px" }}
                   />
                   <Bar dataKey="revenue" fill="#087F5B" radius={[6, 6, 0, 0]} />
@@ -351,18 +352,18 @@ export default function DailySummaryPage() {
       {/* Complete Transaction History Table */}
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="text-base">Transaction Ledger</CardTitle>
+          <CardTitle className="text-base">{t("summary.recentHistory")}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-5 sm:px-6">Bill ID</th>
-                  <th className="py-3 px-4">Customer</th>
-                  <th className="py-3 px-4">Payment</th>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-5 sm:px-6 text-right">Total</th>
+                  <th className="py-3 px-5 sm:px-6">{t("summary.colBillNo")}</th>
+                  <th className="py-3 px-4">{t("summary.colItems")}</th>
+                  <th className="py-3 px-4">{t("summary.colPayment")}</th>
+                  <th className="py-3 px-4">{t("summary.colTime")}</th>
+                  <th className="py-3 px-5 sm:px-6 text-right">{t("summary.colAmount")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -391,7 +392,7 @@ export default function DailySummaryPage() {
                       {formatDateTime(txn.createdAt)}
                     </td>
                     <td className="py-3.5 px-5 sm:px-6 text-right font-extrabold text-slate-900 tabular-nums">
-                      {formatINR(txn.total)}
+                      {formatCurrency(txn.total)}
                     </td>
                   </tr>
                 ))}

@@ -4,6 +4,7 @@ import pytest
 from backend.db import init_db
 from backend.seed import seed_database
 from backend.billing import (
+    add_items_to_draft_bill,
     bills,
     clear_bills,
     create_draft_bill,
@@ -265,3 +266,60 @@ def test_bills_isolation(seeded_db: Path):
     assert bill_2_current["lines"][0]["item_id"] == 2
     assert bill_2_current["lines"][0]["qty"] == 2
     assert bill_2_current["total"] == 84
+
+
+def test_add_items_to_existing_draft(seeded_db: Path):
+    """12. Adding new items to an existing draft bill retains previous items and updates total."""
+    # Step 1: Create draft with Rice (2 kg at 60 = 120)
+    bill = create_draft_bill(
+        items=[{"item_id": 1, "qty": 2}],
+        db_path=seeded_db,
+    )
+    b_id = bill["bill_id"]
+    assert len(bill["lines"]) == 1
+    assert bill["total"] == 120
+
+    # Step 2: Add Sugar (1 kg at 42 = 42) to the active draft
+    updated = add_items_to_draft_bill(
+        bill_id=b_id,
+        items=[{"item_id": 2, "qty": 1}],
+        db_path=seeded_db,
+    )
+    assert updated["bill_id"] == b_id
+    assert len(updated["lines"]) == 2
+    assert updated["lines"][0]["name"] == "Rice"
+    assert updated["lines"][0]["qty"] == 2
+    assert updated["lines"][1]["name"] == "Sugar"
+    assert updated["lines"][1]["qty"] == 1
+    assert updated["total"] == 162
+
+    # Step 3: Add Salt (item 12, 1 kg at 25 = 25)
+    final = add_items_to_draft_bill(
+        bill_id=b_id,
+        items=[{"item_id": 12, "qty": 1}],
+        db_path=seeded_db,
+    )
+    assert len(final["lines"]) == 3
+    assert final["lines"][2]["name"] == "Salt"
+    assert final["total"] == 187
+
+
+def test_add_items_duplicate_merges_qty(seeded_db: Path):
+    """13. Adding the same product again merges the quantity rather than duplicating lines."""
+    bill = create_draft_bill(
+        items=[{"item_id": 1, "qty": 2}],  # Rice 2 kg = 120
+        db_path=seeded_db,
+    )
+    b_id = bill["bill_id"]
+
+    updated = add_items_to_draft_bill(
+        bill_id=b_id,
+        items=[{"item_id": 1, "qty": 3}],  # Add 3 more kg of Rice
+        db_path=seeded_db,
+    )
+    assert len(updated["lines"]) == 1
+    assert updated["lines"][0]["name"] == "Rice"
+    assert updated["lines"][0]["qty"] == 5
+    assert updated["lines"][0]["amount"] == 300
+    assert updated["total"] == 300
+

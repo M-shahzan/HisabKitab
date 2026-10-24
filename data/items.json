@@ -2,7 +2,7 @@
   {
     "id": 1,
     "name": "Rice",
-    "synonyms": "chawal,arisi,rice,basmati",
+    "synonyms": "chawal,arisi,rice,basmati,akki,bhatta,biyyam,tandul,chal,chokha",
     "unit": "kg",
     "price": 60.0,
     "starting_stock": 50.0,
@@ -11,7 +11,7 @@
   {
     "id": 2,
     "name": "Sugar",
-    "synonyms": "chini,sakkar,sakkare,cheeni",
+    "synonyms": "chini,sakkar,sakkare,cheeni,panchadara,chekkera,sakhar,khand",
     "unit": "kg",
     "price": 42.0,
     "starting_stock": 40.0,
@@ -20,7 +20,7 @@
   {
     "id": 3,
     "name": "Toor Dal",
-    "synonyms": "arhar dal,tuvar dal,sambar dal,tuvaram paruppu",
+    "synonyms": "arhar dal,tuvar dal,sambar dal,tuvaram paruppu,togari bele,kandi pappu,tur dal",
     "unit": "kg",
     "price": 140.0,
     "starting_stock": 30.0,
@@ -29,7 +29,7 @@
   {
     "id": 4,
     "name": "Moong Dal",
-    "synonyms": "mung dal,yellow dal,payatham paruppu,pasi paruppu",
+    "synonyms": "mung dal,yellow dal,payatham paruppu,pasi paruppu,hesaru bele,pesara pappu,mug dal",
     "unit": "kg",
     "price": 120.0,
     "starting_stock": 25.0,
@@ -38,7 +38,7 @@
   {
     "id": 5,
     "name": "Wheat Flour",
-    "synonyms": "atta,gehun atta,wheat flour,godhumai maavu",
+    "synonyms": "atta,gehun atta,wheat flour,godhumai maavu,godhi hittu,godhuma pindi,gahu pith",
     "unit": "kg",
     "price": 45.0,
     "starting_stock": 60.0,
@@ -47,7 +47,7 @@
   {
     "id": 6,
     "name": "Mustard Oil",
-    "synonyms": "sarson tel,sarson oil,kadugu ennai",
+    "synonyms": "sarson tel,sarson oil,kadugu ennai,sasive enne,aava nune,mohari tel,shorsher tel,rai nu tel",
     "unit": "litre",
     "price": 160.0,
     "starting_stock": 20.0,
@@ -56,7 +56,7 @@
   {
     "id": 7,
     "name": "Sunflower Oil",
-    "synonyms": "cooking oil,refined oil,sunflower tel,surajmukhi tel",
+    "synonyms": "cooking oil,refined oil,sunflower tel,surajmukhi tel,suryakanti enne,surya kanthi nune",
     "unit": "litre",
     "price": 135.0,
     "starting_stock": 30.0,
@@ -65,7 +65,7 @@
   {
     "id": 8,
     "name": "Milk",
-    "synonyms": "doodh,paal,packet milk,cow milk",
+    "synonyms": "doodh,paal,packet milk,cow milk,haalu,paalu,dudh",
     "unit": "litre",
     "price": 60.0,
     "starting_stock": 25.0,
@@ -74,7 +74,7 @@
   {
     "id": 9,
     "name": "Curd",
-    "synonyms": "dahi,thayir,curd,yogurt",
+    "synonyms": "dahi,thayir,curd,yogurt,mosaru,perugu,doi",
     "unit": "packet",
     "price": 30.0,
     "starting_stock": 15.0,
@@ -83,7 +83,7 @@
   {
     "id": 10,
     "name": "Tea",
-    "synonyms": "chai,chai patti,tea powder,chaapathi",
+    "synonyms": "chai,chai patti,tea powder,chaapathi,chaha",
     "unit": "packet",
     "price": 90.0,
     "starting_stock": 35.0,
@@ -101,7 +101,7 @@
   {
     "id": 12,
     "name": "Salt",
-    "synonyms": "namak,uppu,tata salt,iodized salt",
+    "synonyms": "namak,uppu,tata salt,iodized salt,mith,noon,mithu,lobon",
     "unit": "kg",
     "price": 25.0,
     "starting_stock": 40.0,
@@ -110,7 +110,7 @@
   {
     "id": 13,
     "name": "Turmeric Powder",
-    "synonyms": "haldi,haldi powder,manjal,turmeric",
+    "synonyms": "haldi,haldi powder,manjal,turmeric,arishina",
     "unit": "packet",
     "price": 35.0,
     "starting_stock": 25.0,
@@ -119,7 +119,7 @@
   {
     "id": 14,
     "name": "Red Chilli Powder",
-    "synonyms": "mirchi powder,lal mirch,milagai thool,chilli powder",
+    "synonyms": "mirchi powder,lal mirch,milagai thool,chilli powder,khara pudi,mensinakayi pudi",
     "unit": "packet",
     "price": 45.0,
     "starting_stock": 25.0,
@@ -128,7 +128,7 @@
   {
     "id": 15,
     "name": "Coriander Powder",
-    "synonyms": "dhaniya powder,dhania powder,kothamalli thool",
+    "synonyms": "dhaniya powder,dhania powder,kothamalli thool,kothambari pudi",
     "unit": "packet",
     "price": 40.0,
     "starting_stock": 20.0,
@@ -137,7 +137,7 @@
   {
     "id": 16,
     "name": "Cumin Seeds",
-    "synonyms": "jeera,jira,jeeragam,cumin",
+    "synonyms": "jeera,jira,jeeragam,cumin,jeerige",
     "unit": "packet",
     "price": 55.0,
     "starting_stock": 20.0,
@@ -146,7 +146,7 @@
   {
     "id": 17,
     "name": "Black Pepper",
-    "synonyms": "kali mirch,milagu,black pepper,pepper",
+    "synonyms": "kali mirch,milagu,black pepper,pepper,kari menasu",
     "unit": "packet",
     "price": 70.0,
     "starting_stock": 15.0,
@@ -155,7 +155,7 @@
   {
     "id": 18,
     "name": "Onion",
-    "synonyms": "pyaz,kanda,vengayam,onion",
+    "synonyms": "pyaz,kanda,vengayam,onion,eerulli,ullipaya,peyaj,dungli",
     "unit": "kg",
     "price": 35.0,
     "starting_stock": 40.0,
@@ -164,7 +164,7 @@
   {
     "id": 19,
     "name": "Potato",
-    "synonyms": "aloo,alu,batata,urulaikizhangu,potato",
+    "synonyms": "aloo,alu,batata,urulaikizhangu,potato,alugadde,bangaladumpa,bataka",
     "unit": "kg",
     "price": 30.0,
     "starting_stock": 50.0,
@@ -173,7 +173,7 @@
   {
     "id": 20,
     "name": "Tomato",
-    "synonyms": "tamatar,thakkali,tomato",
+    "synonyms": "tamatar,thakkali,tomato,tometo,tamata,tameta",
     "unit": "kg",
     "price": 40.0,
     "starting_stock": 30.0,
@@ -182,7 +182,7 @@
   {
     "id": 21,
     "name": "Bath Soap",
-    "synonyms": "soap,sabun,lifebuoy,lux,bath soap",
+    "synonyms": "soap,sabun,lifebuoy,lux,bath soap,sabuna",
     "unit": "piece",
     "price": 35.0,
     "starting_stock": 45.0,

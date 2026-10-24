@@ -14,6 +14,8 @@ interface TranscriptPanelProps {
   onEditSubmit?: (newText: string) => void;
 }
 
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 export function TranscriptPanel({
   transcript,
   spokenMessage,
@@ -23,6 +25,7 @@ export function TranscriptPanel({
   onRetry,
   onEditSubmit,
 }: TranscriptPanelProps) {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(transcript);
 
@@ -43,7 +46,7 @@ export function TranscriptPanel({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 uppercase tracking-wider">
               <MessageSquareText className="h-4 w-4 text-emerald-600" />
-              <span>Recognized Customer Order</span>
+              <span>{t("transcript.recognizedOrder")}</span>
             </div>
             <div className="flex items-center gap-1">
               {!isEditing ? (
@@ -54,20 +57,20 @@ export function TranscriptPanel({
                     setIsEditing(true);
                   }}
                   className="text-xs font-medium text-emerald-700 hover:text-emerald-900 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-emerald-100/60 transition-colors min-h-[36px]"
-                  title="Correct recognized words"
+                  title={t("transcript.editText")}
                 >
                   <Edit2 className="h-3 w-3" />
-                  <span>Edit Text</span>
+                  <span>{t("transcript.editText")}</span>
                 </button>
               ) : null}
               <button
                 type="button"
                 onClick={onRetry}
                 className="text-xs font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-white transition-colors min-h-[36px]"
-                title="Record again"
+                title={t("transcript.speakAgain")}
               >
                 <RotateCcw className="h-3 w-3" />
-                <span>Speak Again</span>
+                <span>{t("transcript.speakAgain")}</span>
               </button>
             </div>
           </div>
@@ -82,11 +85,11 @@ export function TranscriptPanel({
               />
               <div className="flex justify-end gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
-                  Cancel
+                  {t("transcript.cancel")}
                 </Button>
                 <Button size="sm" onClick={handleSave}>
                   <Check className="h-3.5 w-3.5 mr-1" />
-                  Reparse Items
+                  {t("transcript.reparseItems")}
                 </Button>
               </div>
             </div>
@@ -104,7 +107,7 @@ export function TranscriptPanel({
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
             <div className="text-xs sm:text-sm text-slate-700 font-semibold">
-              <span className="text-emerald-800 font-bold mr-1.5">Assistant:</span>
+              <span className="text-emerald-800 font-bold mr-1.5">{t("transcript.assistant")}</span>
               <span>{spokenMessage}</span>
             </div>
           </div>
@@ -115,20 +118,20 @@ export function TranscriptPanel({
                 type="button"
                 onClick={onStopAudio}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-100 text-amber-800 hover:bg-amber-200 text-xs font-bold transition-colors min-h-[36px]"
-                title="Stop spoken audio"
+                title={t("transcript.stopVoice")}
               >
                 <VolumeX className="h-3.5 w-3.5 text-amber-700 animate-pulse" />
-                <span>Stop Voice</span>
+                <span>{t("transcript.stopVoice")}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={onReplayAudio}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold shadow-xs transition-colors min-h-[36px]"
-                title="Replay assistant voice readout"
+                title={t("transcript.replayVoice")}
               >
                 <Volume2 className="h-3.5 w-3.5" />
-                <span>Replay Voice</span>
+                <span>{t("transcript.replayVoice")}</span>
               </button>
             )}
           </div>

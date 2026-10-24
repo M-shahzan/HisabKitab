@@ -1,4 +1,4 @@
-// File: C:\Users\Home\Documents\antigravity\HisabKitab\frontend\src\app\layout.tsx
+// File: C:\ms\projects\HisabKitab\frontend\src\app\layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

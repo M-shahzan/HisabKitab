@@ -43,6 +43,8 @@ export interface ConfirmApiResponse {
     unit?: string;
     [key: string]: any;
   }>;
+  lines?: BackendBillLine[];
+  bill_id?: string;
   ok?: boolean;
   message?: string;
   billNumber?: string;
@@ -110,6 +112,7 @@ export interface ConfirmSaleResponse {
   total: number;
   itemCount: number;
   timestamp: string;
+  lines?: BackendBillLine[];
   stockUpdates?: Array<{
     productId: string;
     newQuantity: number;

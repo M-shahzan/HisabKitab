@@ -6,18 +6,20 @@ import { SalesOverview } from "@/components/dashboard/SalesOverview";
 import { StatCards } from "@/components/dashboard/StatCards";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { LoadingState, ErrorState } from "@/components/ui/States";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const { stats, isLoading, error, refresh } = useDashboard();
 
   if (isLoading) {
-    return <LoadingState message="Loading your shop's dashboard data..." className="py-24" />;
+    return <LoadingState message={t("common.loading")} className="py-24" />;
   }
 
   if (error || !stats) {
     return (
       <ErrorState
-        title="Could not load dashboard statistics"
+        title={t("common.error")}
         message={error || "An unexpected error occurred while fetching metrics."}
         onRetry={refresh}
         className="my-12"

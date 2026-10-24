@@ -15,15 +15,18 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { SupportedLanguage } from "@/lib/i18n/translations";
+
 export default function SettingsPage() {
+  const { language, setLanguage, t } = useLanguage();
+
   const [shopName, setShopName] = useState("Gupta Kirana & General Store");
   const [ownerName, setOwnerName] = useState("Rajesh Gupta");
   const [phone, setPhone] = useState("+91 98450 12345");
   const [gstin, setGstin] = useState("29ABCDE1234F1Z5");
   const [city, setCity] = useState("Bengaluru, Karnataka");
 
-  const [selectedLang, setSelectedLang] = useState<"en" | "hi" | "kn" | "ur">("en");
-  const [currency, setCurrency] = useState("INR");
   const [autoReparse, setAutoReparse] = useState(true);
   const [soundFeedback, setSoundFeedback] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -34,23 +37,29 @@ export default function SettingsPage() {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
+  const handleLangChange = (lang: SupportedLanguage) => {
+    setLanguage(lang);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-slate-200">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Settings & Preferences
+            {t("settings.title")}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage your store profile, voice speech models, and regional languages
+            {t("settings.subtitle")}
           </p>
         </div>
 
         {saveSuccess && (
           <Badge variant="emerald" className="py-1 px-3 text-xs">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>Settings Saved</span>
+            <span>{t("settings.saved")}</span>
           </Badge>
         )}
       </div>
@@ -61,18 +70,18 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Store className="h-4 w-4 text-emerald-600" />
-              <span>Shop Profile</span>
+              <span>{t("settings.shopProfile")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Shop Name"
+                label={t("settings.shopName")}
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
               />
               <Input
-                label="Proprietor / Owner Name"
+                label={t("settings.ownerName")}
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
               />
@@ -80,17 +89,17 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Input
-                label="Contact Phone"
+                label={t("settings.phone")}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
               <Input
-                label="GSTIN (Optional)"
+                label={t("settings.gstin")}
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value)}
               />
               <Input
-                label="City / Location"
+                label={t("settings.city")}
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               />
@@ -98,82 +107,66 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Regional Language & Dialect Readiness */}
+        {/* Website Language Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Languages className="h-4 w-4 text-emerald-600" />
-              <span>Language & Dialect Readiness</span>
+              <span>{t("settings.languageSectionTitle")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-slate-500">
-              Select your primary conversational language for shop voice recognition:
+              {t("settings.languageSectionSubtitle")}
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* English */}
               <div
-                onClick={() => setSelectedLang("en")}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedLang === "en"
-                    ? "bg-emerald-50 border-emerald-600 ring-1 ring-emerald-600"
+                onClick={() => handleLangChange("en")}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  language === "en"
+                    ? "bg-emerald-50 border-emerald-600 ring-2 ring-emerald-600 shadow-sm"
                     : "border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-slate-900">English</span>
-                  <Badge variant="emerald">Live</Badge>
+                  <Badge variant="emerald">{t("settings.liveBadge")}</Badge>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">Indian English + Hinglish terms</p>
+                <p className="text-xs text-slate-500 mt-1.5">Indian English + Hinglish retail terminology</p>
               </div>
 
               {/* Hindi */}
               <div
-                onClick={() => setSelectedLang("hi")}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedLang === "hi"
-                    ? "bg-emerald-50 border-emerald-600 ring-1 ring-emerald-600"
+                onClick={() => handleLangChange("hi")}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  language === "hi"
+                    ? "bg-emerald-50 border-emerald-600 ring-2 ring-emerald-600 shadow-sm"
                     : "border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-slate-900">हिन्दी (Hindi)</span>
-                  <Badge variant="emerald">Live</Badge>
+                  <Badge variant="emerald">{t("settings.liveBadge")}</Badge>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">तूर दाल, तेल, चीनी, आटा</p>
+                <p className="text-xs text-slate-500 mt-1.5">दुकान का पूरा हिसाब और बिलिंग हिंदी में</p>
               </div>
 
               {/* Kannada */}
               <div
-                onClick={() => setSelectedLang("kn")}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedLang === "kn"
-                    ? "bg-emerald-50 border-emerald-600 ring-1 ring-emerald-600"
+                onClick={() => handleLangChange("kn")}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  language === "kn"
+                    ? "bg-emerald-50 border-emerald-600 ring-2 ring-emerald-600 shadow-sm"
                     : "border-slate-200 hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-slate-900">ಕನ್ನಡ (Kannada)</span>
-                  <Badge variant="blue">Ready</Badge>
+                  <Badge variant="emerald">{t("settings.readyBadge")}</Badge>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">ಅಕ್ಕಿ, ಬೇಳೆ, ಎಣ್ಣೆ, ಸಕ್ಕರೆ</p>
-              </div>
-
-              {/* Urdu RTL */}
-              <div
-                onClick={() => setSelectedLang("ur")}
-                className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                  selectedLang === "ur"
-                    ? "bg-emerald-50 border-emerald-600 ring-1 ring-emerald-600"
-                    : "border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-slate-900">اردو (Urdu)</span>
-                  <Badge variant="gray">RTL Prep</Badge>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">Layout RTL architectural support</p>
+                <p className="text-xs text-slate-500 mt-1.5">ಸಂಪೂರ್ಣ ಕಿರಾಣಿ ಬಿಲ್ಲಿಂಗ್ ಮತ್ತು ದಾಸ್ತಾನು ಕನ್ನಡದಲ್ಲಿ</p>
               </div>
             </div>
           </CardContent>
@@ -184,15 +177,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Mic className="h-4 w-4 text-emerald-600" />
-              <span>Voice Interaction Preferences</span>
+              <span>{t("settings.voiceSectionTitle")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Auto-parse spoken items</p>
+                <p className="text-sm font-semibold text-slate-900">{t("settings.autoParseTitle")}</p>
                 <p className="text-xs text-slate-500">
-                  Automatically parse items when silence is detected
+                  {t("settings.autoParseSub")}
                 </p>
               </div>
               <input
@@ -205,9 +198,9 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Subtle audio chime on confirmation</p>
+                <p className="text-sm font-semibold text-slate-900">{t("settings.chimeTitle")}</p>
                 <p className="text-xs text-slate-500">
-                  Plays a soft confirmation chime when a sale is confirmed
+                  {t("settings.chimeSub")}
                 </p>
               </div>
               <input
@@ -225,25 +218,25 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Coins className="h-4 w-4 text-emerald-600" />
-              <span>Currency & Numbering Format</span>
+              <span>{t("settings.currencySectionTitle")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Indian Rupee (INR ₹)</p>
+                <p className="text-sm font-semibold text-slate-900">{t("settings.rupeeTitle")}</p>
                 <p className="text-xs text-slate-500">
-                  Formatted with lakhs & crores standard: ₹1,00,000.00
+                  {t("settings.rupeeSub")}
                 </p>
               </div>
-              <Badge variant="emerald">Default Standard</Badge>
+              <Badge variant="emerald">{t("settings.defaultStandard")}</Badge>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end">
           <Button type="submit" size="lg" className="shadow-sm">
-            <span>Save Preferences</span>
+            <span>{t("settings.savePreferences")}</span>
           </Button>
         </div>
       </form>

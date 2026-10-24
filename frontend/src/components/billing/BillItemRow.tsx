@@ -5,6 +5,7 @@ import { BillItem } from "@/types/billing";
 import { formatINR, formatQuantity } from "@/lib/formatters";
 import { Plus, Minus, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface BillItemRowProps {
   item: BillItem;
@@ -13,6 +14,7 @@ interface BillItemRowProps {
 }
 
 export function BillItemRow({ item, onUpdateQuantity, onRemove }: BillItemRowProps) {
+  const { t, formatCurrency } = useLanguage();
   const [isEditingQty, setIsEditingQty] = useState(false);
   const [qtyInput, setQtyInput] = useState(item.quantity.toString());
 
@@ -51,7 +53,7 @@ export function BillItemRow({ item, onUpdateQuantity, onRemove }: BillItemRowPro
           </h4>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">
-          Unit Price: <span className="font-semibold text-slate-700">{formatINR(item.unitPrice)}</span> / {item.unit}
+          {t("bill.unitPrice")}: <span className="font-semibold text-slate-700">{formatCurrency(item.unitPrice)}</span> / {item.unit}
         </p>
       </div>
 
@@ -103,7 +105,7 @@ export function BillItemRow({ item, onUpdateQuantity, onRemove }: BillItemRowPro
         {/* Line Total */}
         <div className="text-right min-w-[80px]">
           <p className="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums">
-            {formatINR(item.lineTotal)}
+            {formatCurrency(item.lineTotal)}
           </p>
         </div>
 
@@ -112,7 +114,7 @@ export function BillItemRow({ item, onUpdateQuantity, onRemove }: BillItemRowPro
           type="button"
           onClick={() => onRemove(item.id)}
           className="h-9 w-9 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors"
-          title="Remove item"
+          title={t("bill.removeItem")}
           aria-label={`Remove ${item.productName}`}
         >
           <Trash2 className="h-4 w-4" />

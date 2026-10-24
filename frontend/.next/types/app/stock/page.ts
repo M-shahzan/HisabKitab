@@ -1,4 +1,4 @@
-// File: C:\Users\Home\Documents\antigravity\HisabKitab\frontend\src\app\stock\page.tsx
+// File: C:\ms\projects\HisabKitab\frontend\src\app\stock\page.tsx
 import * as entry from '../../../../src/app/stock/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

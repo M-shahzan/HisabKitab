@@ -49,6 +49,7 @@ export async function sendVoiceAudio(
   return await apiFetch<VoiceApiResponse>("/voice", {
     method: "POST",
     body: formData,
+    timeoutMs: 60000,
   });
 }
 

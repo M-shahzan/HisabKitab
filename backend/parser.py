@@ -42,6 +42,8 @@ VALID_INTENTS = {
     "cancel",
     "query_summary",
     "query_stock",
+    "stock_in",
+    "stock_out",
     "unclear",
 }
 
@@ -61,10 +63,10 @@ def validate_parser_response(data: Any) -> Dict[str, Any]:
     if intent not in VALID_INTENTS:
         raise ValueError(f"Invalid intent '{intent}'. Must be one of {VALID_INTENTS}")
 
-    if intent == "new_sale":
+    if intent in ("new_sale", "stock_in", "stock_out"):
         items = data.get("items")
         if not isinstance(items, list):
-            raise ValueError("Parser output for 'new_sale' must include an 'items' list.")
+            raise ValueError(f"Parser output for '{intent}' must include an 'items' list.")
 
     elif intent == "edit_bill":
         edit = data.get("edit")
@@ -79,12 +81,12 @@ def validate_parser_response(data: Any) -> Dict[str, Any]:
 
 
 SYSTEM_PROMPT = """You are the specialized billing parser for "Hisab Kitab", an Indian voice-first billing web app for local shopkeepers.
-You parse spoken transcripts (in Hindi, Hinglish, or English) into structured billing JSON matching Section 4.2 of the build guide.
+You parse spoken transcripts in Indian regional languages (Hindi, Kannada, Tamil, Telugu, Marathi, Gujarati, Bengali, Malayalam, Punjabi, Urdu, and English, or regional code-mixing with English) into structured billing JSON matching Section 4.2 of the build guide.
 
 OUTPUT FORMAT:
 Return ONLY a valid JSON object with EXACTLY these fields:
 {
-  "intent": "new_sale" | "edit_bill" | "confirm" | "cancel" | "query_summary" | "query_stock" | "unclear",
+  "intent": "new_sale" | "edit_bill" | "confirm" | "cancel" | "query_summary" | "query_stock" | "stock_in" | "stock_out" | "unclear",
   "items": [
     {
       "item_id": <int>,
@@ -105,38 +107,110 @@ Return ONLY a valid JSON object with EXACTLY these fields:
 
 RULES & CONTRACTS:
 1. INTENT DETERMINATION:
-   - "new_sale": Shopkeeper speaks items to add or sell (e.g., "2 kilo chawal, ek kilo cheeni").
-   - "edit_bill": Modifying an active draft bill line (e.g., "make rice 3 kg", "chawal teen kilo kar do", "sugar hata do", "rate 50 kar do").
-   - "confirm": Agreement or confirmation words ("yes", "haan", "ha", "theek hai", "save", "done", "confirm", "pakka karo").
-   - "cancel": Cancellation words ("no", "cancel", "nahi", "rehne do", "hatao", "mat karo", "chhod do").
-   - "query_summary": Inquiries about daily sales or totals ("aaj ka hisab", "aaj kitna becha", "how much did I sell today", "today total", "daily summary").
-   - "query_stock": Inquiries about remaining stock ("chawal kitna bacha hai", "kitna stock hai", "how much rice is left"). Set `query_item_id` to the matching item_id.
+   - "stock_in": Adding or increasing inventory/stock across any language:
+     - Hindi: "Add 10 kg rice to stock", "Stock mein 20 kilo chawal add karo", "10 kilo chini stock mein daalo"
+     - Kannada: "Stock ge 10 kg akki serisi", "Stock nalli 10 kg akki haaku"
+     - Tamil: "Stock-il 10 kg arisi serka", "Stock-il 5 kilo chini podunga"
+     - Telugu: "Stock lo 10 kg biyyam kalapandi", "Stock lo 5 kg chekkera veyandi"
+     - Marathi: "Stock madhe 10 kilo tandul taka"
+     - Gujarati: "Stock ma 10 kilo chokha umelo"
+     - Bengali: "Stock-e 10 kg chal jog koro"
+     - English: "Add 15 packets of salt to stock", "Increase sugar stock by 5 kg"
+     Put items with item_id, qty, unit in `items`.
+
+   - "stock_out": Removing or decreasing inventory/stock across any language:
+     - Hindi: "Remove 2 kg sugar from stock", "Cheeni ka stock 5 kilo kam karo", "Stock se 2 packet namak nikalo"
+     - Kannada: "Stock ninda 2 kg sakkare thegiri", "Sakkare stock 2 kg kammi maadi"
+     - Tamil: "Stock-ilirundhu 2 kg chini edu", "Chini stock 2 kg kuraikka"
+     - Telugu: "Stock nunchi 2 kg chekkera theeyandi", "Chekkera stock 2 kg thagginchandi"
+     - Marathi: "Stock madhun 2 kilo sakhar kami kara"
+     - Gujarati: "Stock mathi 2 kilo khand ghadado"
+     - Bengali: "Stock theke 2 kg chini komao"
+     - English: "Reduce 5 kg rice from stock", "Remove 2 kg sugar from stock"
+     Put items with item_id, qty, unit in `items`.
+
+   - "query_stock": Inquiries about remaining stock:
+     - Hindi: "chawal kitna bacha hai", "kitna stock hai", "how much rice is left"
+     - Kannada: "akki stock eshtu ide?", "sakkare kitna ide?"
+     - Tamil: "arisi stock evvalavu irukku?", "chini evvalavu irukku?"
+     - Telugu: "biyyam stock entha undi?", "chekkera entha undi?"
+     - Marathi: "tandul stock kiti ahe?"
+     - Bengali: "chal koto ache?"
+     - English: "How much rice is in stock?"
+     Set `query_item_id` to the matching item_id.
+
+   - "new_sale": Shopkeeper speaks items to sell to a customer:
+     - Hindi: "2 kilo chawal dena", "2 kilo chawal, ek kilo cheeni"
+     - Kannada: "eradu kilo akki, ondhu kilo sakkare kodi", "2 kg akki beku"
+     - Tamil: "irandu kilo arisi, oru kilo chini kudu", "2 kg arisi venum"
+     - Telugu: "rendu kilo biyyam, oka kilo chekkera ivvandi"
+     - Marathi: "don kilo tandul, ek kilo sakhar dya"
+     - Gujarati: "be kilo chokha, ek kilo khand aapo"
+     - Bengali: "dui kilo chal, ek kilo chini dao"
+     - English: "Give 2 kg rice and 1 kg sugar"
+
+   - "edit_bill": Modifying an active draft bill line ("make rice 3 kg", "chawal teen kilo kar do", "arisi 3 kilo aaku", "sugar hata do", "rate 50 kar do").
+   - "confirm": Agreement or confirmation words ("yes", "haan", "ha", "theek hai", "save", "done", "confirm", "sariyaagide", "haudu", "sare", "barobar", "thik ache").
+   - "cancel": Cancellation words ("no", "cancel", "nahi", "rehne do", "hatao", "mat karo", "beda", "vendaam", "vaddu", "nako", "dorkar nei").
+   - "query_summary": Inquiries about daily sales or totals ("aaj ka hisab", "today total", "ivattina hisab", "inraiya hisab", "ee roju total", "aajchi vikri", "ajker hisab").
    - "unclear": If utterance is unintelligible, ambiguous, or items not found in catalog. Set `unknown_words` and `needs_clarification`.
 
 2. ITEM MAPPING & CATALOG MATCHING:
-   - Match items to their exact catalog `id` using names and synonyms.
+   - Match items to their exact catalog `id` using names and synonyms in all supported regional languages:
+     - Rice: akki, arisi, biyyam, tandul, chal, chokha, chawal, rice, basmati
+     - Sugar: sakkare, chini, cheeni, sakkar, panchadara, chekkera, sakhar, khand
+     - Toor Dal: arhar dal, tuvar dal, sambar dal, tuvaram paruppu, togari bele, kandi pappu, tur dal
+     - Moong Dal: mung dal, yellow dal, payatham paruppu, hesaru bele, pesara pappu, mug dal
+     - Wheat Flour: atta, gehun atta, wheat flour, godhumai maavu, godhi hittu, godhuma pindi, gahu pith
+     - Mustard Oil: sarson tel, sarson oil, kadugu ennai, sasive enne, aava nune, mohari tel, shorsher tel, rai nu tel
+     - Sunflower Oil: cooking oil, refined oil, sunflower tel, surajmukhi tel, suryakanti enne, surya kanthi nune
+     - Milk: doodh, paal, haalu, paalu, dudh
+     - Curd: dahi, thayir, mosaru, perugu, doi
+     - Tea: chai, tea, chaapathi, chaha, cha
+     - Coffee: coffee, kaapi, nescafe, bru
+     - Salt: namak, uppu, tata salt, iodized salt, mith, noon, mithu, lobon
+     - Turmeric Powder: haldi, manjal, arishina, pasupu, halad, holud, haldar
+     - Red Chilli Powder: mirchi powder, lal mirch, milagai thool, khara pudi, karam, mensinakayi pudi
+     - Coriander Powder: dhaniya powder, dhania powder, kothamalli thool, kothambari pudi, dhaniyala podi, dhane powder
+     - Cumin Seeds: jeera, jira, jeeragam, jeerige, jeelakarra, jire
+     - Black Pepper: kali mirch, milagu, black pepper, pepper, kari menasu, miriyalu, mire, gol morich
+     - Onion: pyaz, kanda, vengayam, onion, eerulli, ullipaya, peyaj, dungli
+     - Potato: aloo, alu, batata, urulaikizhangu, potato, alugadde, bangaladumpa, bataka
+     - Tomato: tamatar, thakkali, tomato, tamata, tometa, tameta
+     - Bath Soap: soap, sabun, lifebuoy, lux, bath soap, sabuna, sabbu
+     - Washing Powder: detergent, surf, surf excel, washing powder, kapde dhone ka powder
+     - Dishwash Bar: vim bar, bartan sabun, dish soap, dishwash soap
+     - Toothpaste: toothpaste, colgate, pepsodent, dant kanti, brush paste
+     - Biscuits: biscuit, parle-g, parle g, marie gold, biskut
    - The supplied CATALOG is the sole authority for item IDs. Do NOT assume IDs from examples.
-   - If a generic word like 'tel' or 'oil' is spoken without a specific variety, map to the general cooking/sunflower oil in the catalog.
+   - If a generic word like 'tel', 'oil', 'enne', or 'nune' is spoken without a specific variety, map to the general cooking/sunflower oil in the catalog.
    - Never invent item IDs. If words refer to items not in the catalog (e.g., 'dragon fruit'), put them in `unknown_words` and ask in `needs_clarification`.
-   - In mixed requests containing both known and unknown items (e.g. "2 kilo chawal aur 1 kilo dragon fruit"), keep intent as "new_sale", include the known items in `items`, put the unknown item in `unknown_words`, and ask about it in `needs_clarification`.
 
 3. NUMBER & UNIT HANDLING:
-   - Handle colloquial number words:
-     - "dhai" = 2.5
-     - "derh" / "dedh" = 1.5
-     - "sava" = 1.25
-     - "adha" / "aadha" = 0.5
-     - "paun" = 0.75
-     - "pav" = 0.25 (or 250 grams)
-     - "ek"=1, "do"=2, "teen"=3, "char"=4, "panch"=5, "chhah"=6, "saat"=7, "aath"=8, "nau"=9, "das"=10
+   - Handle numbers and fractions across regional languages:
+     - Digits (1-10):
+       - Hindi: ek=1, do=2, teen=3, char=4, panch=5, chhah=6, saat=7, aath=8, nau=9, das=10
+       - Kannada: ondu=1, eradu=2, mooru=3, naalku=4, aidu=5, aaru=6, eelu=7, entu=8, ombattu=9, hattu=10
+       - Tamil: ondru/oru=1, irandu/rendu=2, moondru=3, naangu=4, ainthu=5, aaru=6, eazhu=7, ettu=8, onpathu=9, pathu=10
+       - Telugu: okati=1, rendu=2, moodu=3, naalugu=4, aidu=5, aaru=6, eedu=7, enimidi=8, tommidi=9, padi=10
+       - Marathi: ek=1, don=2, teen=3, char=4, paach=5, saha=6, saat=7, aath=8, nau=9, daha=10
+       - Gujarati: ek=1, be=2, tran=3, chaar=4, paanch=5, chha=6, saat=7, aath=8, nav=9, das=10
+       - Bengali: ek=1, dui=2, tin=3, char=4, paach=5, choy=6, saat=7, aat=8, noy=9, dos=10
+     - Fractions:
+       - 0.5: adha, ardha, arai, sagam, adhadho, adh, half
+       - 0.25: pav, kaalu, kaal, paavu, paa, poya, quarter
+       - 0.75: paun, mukkaalu, mukkaal, muppaavu, pono
+       - 1.5: derh, dedh, ondhuvare, ondrai, ded, dodh
+       - 2.5: dhai, eraduvare, rendarai, adeech, adhi, aadhai
    - Unit conversions:
      - grams to kg: 500g -> 0.5 kg, 250g -> 0.25 kg, 100g -> 0.1 kg
-     - half kilo -> 0.5 kg
-     - Always return the unit corresponding to the catalog item's unit. Do not invent arbitrary units.
+     - half kilo / ardha kilo / arai kilo / sagam kilo -> 0.5 kg
+     - Always return the unit corresponding to the catalog item's unit.
 
 4. PRICING CONTRACT (CRITICAL):
    - `price` in `items` ALWAYS means SPOKEN PRICE PER UNIT (e.g., "45 rupaye kilo" -> price: 45.0).
    - If no price is spoken, set `price: null` (backend will use catalog price).
+   - For stock adjustments ("stock_in" / "stock_out"), set `price: null`.
    - NEVER return total line amount as price. If a spoken price overrides the catalog, it is the price per unit.
 
 5. EDITS:
@@ -149,6 +223,51 @@ RULES & CONTRACTS:
 CRITICAL: The IDs shown below in the examples are for demonstration only. Always use the actual `id` from the runtime CATALOG for the matched item.
 
 EXAMPLES:
+Transcript: "Add 10 kg rice to stock"
+{"intent": "stock_in", "items": [{"item_id": 1, "qty": 10.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock ge 10 kg akki serisi"
+{"intent": "stock_in", "items": [{"item_id": 1, "qty": 10.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock-il 10 kg arisi serka"
+{"intent": "stock_in", "items": [{"item_id": 1, "qty": 10.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock lo 10 kg biyyam kalapandi"
+{"intent": "stock_in", "items": [{"item_id": 1, "qty": 10.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock ninda 2 kg sakkare thegiri"
+{"intent": "stock_out", "items": [{"item_id": 2, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock theke 2 kg chini komao"
+{"intent": "stock_out", "items": [{"item_id": 2, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "eradu kilo akki kodi"
+{"intent": "new_sale", "items": [{"item_id": 1, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "irandu kilo arisi, oru kilo chini kudu"
+{"intent": "new_sale", "items": [{"item_id": 1, "qty": 2.0, "unit": "kg", "price": null}, {"item_id": 2, "qty": 1.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "rendu kilo biyyam, oka kilo chekkera ivvandi"
+{"intent": "new_sale", "items": [{"item_id": 1, "qty": 2.0, "unit": "kg", "price": null}, {"item_id": 2, "qty": 1.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Stock mein 20 kilo chawal add karo"
+{"intent": "stock_in", "items": [{"item_id": 1, "qty": 20.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Remove 2 kg sugar from stock"
+{"intent": "stock_out", "items": [{"item_id": 2, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Cheeni ka stock 5 kilo kam karo"
+{"intent": "stock_out", "items": [{"item_id": 2, "qty": 5.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Add 15 packets of salt"
+{"intent": "stock_in", "items": [{"item_id": 12, "qty": 15.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "How much rice is in stock?"
+{"intent": "query_stock", "items": [], "edit": null, "query_item_id": 1, "unknown_words": [], "needs_clarification": null}
+
+Transcript: "Give 2 kg rice"
+{"intent": "new_sale", "items": [{"item_id": 1, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
+
 Transcript: "2 kilo chawal"
 {"intent": "new_sale", "items": [{"item_id": 1, "qty": 2.0, "unit": "kg", "price": null}], "edit": null, "query_item_id": null, "unknown_words": [], "needs_clarification": null}
 
@@ -231,10 +350,39 @@ def _extract_unknown_words(raw: Dict[str, Any]) -> List[str]:
     return deduped
 
 
+def _detect_stock_intent_from_text(text: Optional[str]) -> Optional[str]:
+    """Deterministically detect stock operations from spoken text to prevent misrouting."""
+    if not text:
+        return None
+    t = text.lower().strip()
+
+    # 1. Stock inquiry
+    has_stock_word = any(w in t for w in ["stock", "stok", "स्टॉक", "ಸ್ಟಾಕ್", "ஸ்டாக்", "స్టాక్", "સ્ટોક", "স্টক", "اسٹاک"])
+    has_query_word = any(w in t for w in ["how much", "kitna", "eshtu", "evvalavu", "entha", "kiti", "ketlu", "koto", "check", "left", "bacha", "ide", "irukku", "undi", "ahe", "ache"])
+    if has_stock_word and has_query_word:
+        return "query_stock"
+
+    # 2. Stock removal / out
+    has_out_verb = any(w in t for w in ["remove", "reduce", "decrease", "kam karo", "kammi", "kuraikka", "thagginchandi", "kami kara", "ghadado", "komao", "kadime", "thegiri", "nikalo", "hatao", "edu", "theeyandi", "kadha"])
+    has_from_stock = any(w in t for w in ["from stock", "stock se", "stock ninda", "stock-ilirundhu", "stockil irundhu", "stock nunchi", "stock madhun", "stock mathi", "stock theke", "ka stock", "da stock"])
+    if (has_stock_word and has_out_verb) or has_from_stock:
+        return "stock_out"
+
+    # 3. Stock addition / in
+    has_in_verb = any(w in t for w in ["add", "increase", "serisi", "haaku", "serka", "podunga", "kalapandi", "veyandi", "taka", "umelo", "jog", "badhao", "daalo", "hecchisi", "penchandi", "vadva", "vadharo", "barao"])
+    has_to_stock = any(w in t for w in ["to stock", "in stock", "into stock", "stock mein", "stock me", "stock ge", "stock nalli", "stock-il", "stockil", "stock lo", "stock madhe", "stock ma", "stock-e", "stocke"])
+    is_add_packets_pattern = ("add" in t and ("packet" in t or "packets" in t))
+    if (has_stock_word and has_in_verb) or has_to_stock or is_add_packets_pattern:
+        return "stock_in"
+
+    return None
+
+
 def _validate_and_sanitize(
     raw: Any,
     catalog_map: Dict[int, Dict[str, Any]],
     current_bill: Optional[Dict[str, Any]] = None,
+    transcript: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Validate and enforce the Section 4.2 contract on raw parsed LLM output."""
     if not isinstance(raw, dict):
@@ -247,8 +395,12 @@ def _validate_and_sanitize(
             "needs_clarification": "Invalid parser response format.",
         }
 
-    # 1. Intent validation
+    # 1. Intent validation with deterministic stock routing enforcement
     intent = str(raw.get("intent", "unclear")).strip().lower()
+    stock_intent = _detect_stock_intent_from_text(transcript)
+    if stock_intent:
+        intent = stock_intent
+
     if intent not in VALID_INTENTS:
         intent = "unclear"
 
@@ -289,7 +441,7 @@ def _validate_and_sanitize(
             # Ensure unit strictly matches catalog unit
             unit = catalog_map[item_id].get("unit", "kg")
             item_name = catalog_map[item_id]["name"]
-            max_qty = _get_max_reasonable_qty(unit)
+            max_qty = 1000.0 if intent in ("stock_in", "stock_out") else _get_max_reasonable_qty(unit)
 
             # Validate quantity: must be positive float/int, reject non-positive or unreasonable
             raw_qty = entry.get("qty")
@@ -428,7 +580,13 @@ def _validate_and_sanitize(
                 needs_clarification = "Aap kis product ka stock dekhna chahte hain?"
 
     # 5. Intent and clarification reconciliation
-    if intent == "new_sale":
+    if intent in ("stock_in", "stock_out"):
+        for item in valid_items:
+            item["price"] = None
+        edit = None
+        query_item_id = None
+
+    if intent in ("new_sale", "stock_in", "stock_out"):
         if not valid_items:
             # No valid items recognized
             intent = "unclear"
@@ -455,6 +613,7 @@ def parse(
     transcript: str,
     catalog: List[Dict[str, Any]],
     current_bill: Optional[Dict[str, Any]] = None,
+    language: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Parse a voice transcript into structured billing JSON matching Section 4.2.
 
@@ -462,10 +621,11 @@ def parse(
         transcript: The text transcript of shopkeeper speech.
         catalog: List of catalog items (each with id/item_id, name, synonyms, unit).
         current_bill: Optional active draft bill dict.
+        language: Optional language code or name (e.g. 'hi', 'kn', 'ta', 'te', 'mr', 'gu', 'bn', 'en').
 
     Returns:
         JSON-compatible dictionary with exact Section 4.2 keys:
-        - intent: 'new_sale' | 'edit_bill' | 'confirm' | 'cancel' | 'query_summary' | 'query_stock' | 'unclear'
+        - intent: 'new_sale' | 'edit_bill' | 'confirm' | 'cancel' | 'query_summary' | 'query_stock' | 'stock_in' | 'stock_out' | 'unclear'
         - items: list of {item_id, qty, unit, price}
         - edit: {action, item_id, value} or None
         - query_item_id: int or None
@@ -509,15 +669,17 @@ def parse(
             "total": current_bill.get("total"),
         }
 
+    lang_line = f"\nSPOKEN LANGUAGE: {language}" if language else ""
     user_payload = (
         f"CATALOG:\n{json.dumps(compact_catalog, ensure_ascii=False)}\n\n"
         f"CURRENT DRAFT BILL:\n{json.dumps(bill_summary, ensure_ascii=False) if bill_summary else 'None'}\n\n"
-        f"TRANSCRIPT:\n\"{transcript.strip()}\""
+        f"TRANSCRIPT:\n\"{transcript.strip()}\"{lang_line}"
     )
 
     client = OpenAI(
         api_key=api_key,
         base_url=base_url,
+        timeout=30.0,
     )
 
     last_error: Optional[Exception] = None
@@ -550,7 +712,7 @@ def parse(
             if not isinstance(parsed_data, dict):
                 raise ValueError(f"Expected JSON object, got {type(parsed_data).__name__}")
 
-            return _validate_and_sanitize(parsed_data, catalog_map, current_bill)
+            return _validate_and_sanitize(parsed_data, catalog_map, current_bill, transcript=transcript)
 
         except Exception as exc:
             last_error = exc

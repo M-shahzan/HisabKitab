@@ -15,25 +15,32 @@
     <div class="nav-links">
       <a href="index.html" class="nav-link active">New Sale</a>
       <a href="summary.html" class="nav-link">Summary & Stock</a>
-      <div class="language-select-wrapper">
-        <label for="language-select">Lang:</label>
-        <select id="language-select">
-          <option value="hi" selected>Hindi</option>
-          <option value="en">English</option>
-          <option value="ta">Tamil</option>
-          <option value="kn">Kannada</option>
-        </select>
-      </div>
     </div>
   </header>
 
   <main>
     <!-- Voice Capture Section -->
     <section class="card mic-section">
+      <div class="language-select-wrapper" style="margin-bottom: 16px; justify-content: center; display: flex; align-items: center; gap: 8px;">
+        <label for="language-select" style="font-weight: 600; font-size: 0.95rem; color: #94a3b8;">Language / ಭಾಷೆ:</label>
+        <select id="language-select" style="padding: 6px 14px; font-weight: 600; cursor: pointer; border-radius: 8px; background-color: #0f172a; color: #f8fafc; border: 1px solid #334155;">
+          <option value="kn" selected>Kannada (ಕನ್ನಡ)</option>
+          <option value="hi">Hindi (हिंदी)</option>
+          <option value="en">English</option>
+          <option value="ta">Tamil (தமிழ்)</option>
+          <option value="te">Telugu (తెలుగు)</option>
+          <option value="mr">Marathi (मराठी)</option>
+          <option value="gu">Gujarati (ગુજરાતી)</option>
+          <option value="bn">Bengali (বাংলা)</option>
+          <option value="ml">Malayalam (മലയാളം)</option>
+          <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+          <option value="ur">Urdu (اردو)</option>
+        </select>
+      </div>
       <button id="mic-btn" class="mic-button" aria-label="Tap to speak" title="Tap to start speaking">
         🎤
       </button>
-      <div id="mic-status" class="mic-status">Tap microphone and speak sale</div>
+      <div id="mic-status" class="mic-status">ಮೈಕ್ರೋಫೋನ್ ಒತ್ತಿ ಮಾತನಾಡಿ (Tap mic & speak)</div>
     </section>
 
     <!-- Transcript and System Clarification Box -->
@@ -48,7 +55,7 @@
     <!-- Current Draft Bill Card -->
     <section id="bill-card" class="card bill-card" style="display: none;">
       <div class="bill-header">
-        <h2 class="bill-title">Current Bill</h2>
+        <h2 id="bill-title" class="bill-title">Current Bill</h2>
         <span id="bill-badge" class="bill-badge">Draft</span>
       </div>
 
@@ -56,11 +63,10 @@
         <table id="bill-table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Unit</th>
-              <th>Rate (₹)</th>
-              <th>Amount (₹)</th>
+              <th>Product</th>
+              <th style="text-align: right;">Quantity</th>
+              <th style="text-align: right;">Unit Price</th>
+              <th style="text-align: right;">Line Total</th>
             </tr>
           </thead>
           <tbody id="bill-items-body">
@@ -70,17 +76,42 @@
       </div>
 
       <div class="total-row">
-        <span class="total-label">Total Amount:</span>
+        <span id="bill-total-label" class="total-label">Grand Total:</span>
         <span id="bill-total" class="total-amount">₹0</span>
       </div>
 
-      <div class="bill-actions">
+      <div id="bill-actions" class="bill-actions">
         <button id="confirm-btn" class="btn btn-confirm">
           ✓ Confirm Sale
         </button>
         <button id="cancel-btn" class="btn btn-cancel">
           ✗ Cancel Bill
         </button>
+      </div>
+    </section>
+
+    <!-- Stock Inventory Section -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.4rem;">Current Stock Inventory</h2>
+        <button id="refresh-stock-btn" class="btn" style="padding: 6px 14px; font-size: 0.95rem; background-color: var(--surface-border); color: #fff;">Refresh</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="stock-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th>Unit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="stock-table-body">
+            <!-- Populated dynamically via GET /stock -->
+          </tbody>
+        </table>
       </div>
     </section>
   </main>

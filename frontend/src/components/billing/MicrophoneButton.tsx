@@ -5,6 +5,7 @@ import { BillingState } from "@/types/billing";
 import { Mic, MicOff, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface MicrophoneButtonProps {
   state: BillingState;
@@ -25,38 +26,40 @@ export function MicrophoneButton({ state, onStart, onStop }: MicrophoneButtonPro
     }
   };
 
+  const { t } = useLanguage();
+
   const getStatusText = () => {
     switch (state) {
       case "listening":
         return {
-          title: "Listening...",
-          subtitle: "Speak naturally. I'm listening to your order.",
+          title: t("order.status.listening.title"),
+          subtitle: t("order.status.listening.subtitle"),
         };
       case "processing":
         return {
-          title: "Preparing your bill...",
-          subtitle: "Identifying products and calculating totals.",
+          title: t("order.status.processing.title"),
+          subtitle: t("order.status.processing.subtitle"),
         };
       case "saving":
         return {
-          title: "Confirming transaction...",
-          subtitle: "Updating ledger and store stock.",
+          title: t("order.status.saving.title"),
+          subtitle: t("order.status.saving.subtitle"),
         };
       case "review":
         return {
-          title: "Your bill is ready",
-          subtitle: "Review items below or tap mic again to add more.",
+          title: t("order.status.review.title"),
+          subtitle: t("order.status.review.subtitle"),
         };
       case "error":
         return {
-          title: "Couldn't process your request",
-          subtitle: "Tap the microphone to retry or add items manually.",
+          title: t("order.status.error.title"),
+          subtitle: t("order.status.error.subtitle"),
         };
       case "idle":
       default:
         return {
-          title: "Ready to create a bill",
-          subtitle: "Tap the microphone and tell me what the customer bought.",
+          title: t("order.status.idle.title"),
+          subtitle: t("order.status.idle.subtitle"),
         };
     }
   };

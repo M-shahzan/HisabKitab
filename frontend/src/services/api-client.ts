@@ -4,10 +4,17 @@
  * Handles JSON and multipart/form-data requests, timeout limits, and safe error parsing.
  */
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL !== undefined
-    ? process.env.NEXT_PUBLIC_API_BASE_URL
-    : "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  if (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  if (typeof window !== "undefined" && window.location?.hostname && window.location.hostname !== "localhost") {
+    return `http://${window.location.hostname}:8000`;
+  }
+  return "http://localhost:8000";
+}
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   public status: number;
@@ -21,9 +28,14 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export interface ApiFetchOptions extends RequestInit {
+  timeoutMs?: number;
+}
+
+export async function apiFetch<T>(endpoint: string, options: ApiFetchOptions = {}): Promise<T> {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  const url = `${API_BASE_URL}${cleanEndpoint}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${cleanEndpoint}`;
 
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
@@ -33,7 +45,9 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+  // Voice transcription and LLM inference pipeline can take 20s+ during cloud API latency spikes
+  const timeoutMs = options.timeoutMs ?? (cleanEndpoint.includes("/voice") ? 60000 : 30000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(url, {
@@ -70,13 +84,16 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     }
 
     if (err.name === "AbortError") {
-      throw new ApiError("Request timed out. Please check your backend connection.", 408);
+      throw new ApiError(
+        "Voice processing took longer than expected. Please check your internet connection and try speaking again.",
+        408
+      );
     }
 
     // Network connection failure or CORS error
     const friendlyMessage =
       "Cannot connect to the Hisab Kitab backend server. Please verify that the backend is running on " +
-      (API_BASE_URL || "the configured port") +
+      (baseUrl || "the configured port") +
       ".";
     throw new ApiError(friendlyMessage, 0);
   }
@@ -87,7 +104,8 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
  */
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/health`, { method: "GET" });
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/health`, { method: "GET" });
     return res.ok;
   } catch {
     return false;

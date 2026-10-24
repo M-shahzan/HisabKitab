@@ -24,13 +24,16 @@ import {
   CheckCircle2,
   LayoutDashboard,
   Store,
+  Languages,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function NewOrderPage() {
   const router = useRouter();
   const { allProducts } = useStock();
   const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const { t } = useLanguage();
 
   const {
     state,
@@ -58,6 +61,8 @@ export default function NewOrderPage() {
     addItem,
     resetBill,
     confirmSale,
+    language,
+    setLanguage,
   } = useVoiceBilling();
 
   // Once sale is confirmed, redirect to success screen with receipt details
@@ -79,18 +84,18 @@ export default function NewOrderPage() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                New Order
+                {t("order.newOrder")}
               </h2>
               <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Voice AI Ready
+                {t("order.voiceAiReady")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Draft ID:{" "}
+              {t("order.draftId")}{" "}
               <span className="font-mono font-bold text-slate-800">
-                {billId ? `#${billId}` : "#New-Order"}
+                {billId ? `#${billId}` : t("order.newOrderDraft")}
               </span>{" "}
-              • Tap the large mic below or speak order naturally
+              • {t("order.heroInstruction")}
             </p>
           </div>
         </div>
@@ -105,7 +110,7 @@ export default function NewOrderPage() {
               title="View daily revenue, transactions, and store performance"
             >
               <LayoutDashboard className="h-4 w-4 mr-1.5 text-slate-500" />
-              <span>Dashboard</span>
+              <span>{t("nav.dashboard")}</span>
             </Button>
           </Link>
 
@@ -116,7 +121,7 @@ export default function NewOrderPage() {
             className="bg-white min-h-[40px]"
           >
             <Plus className="h-4 w-4 mr-1.5 text-emerald-600" />
-            <span>Add Item Manually</span>
+            <span>{t("order.addItemManually")}</span>
           </Button>
         </div>
       </div>
@@ -125,14 +130,55 @@ export default function NewOrderPage() {
       <Card className="border-emerald-200/60 bg-gradient-to-b from-emerald-50/50 via-white to-white shadow-card overflow-hidden">
         <CardContent className="pt-6 pb-6">
           {/* Spoken Voice Guidance Hints */}
-          <div className="mb-4 flex flex-wrap items-center gap-2 justify-center text-center">
+          <div className="mb-3 flex flex-wrap items-center gap-2 justify-center text-center">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
               <Volume2 className="h-3.5 w-3.5 text-emerald-600" />
-              Voice Guide:
+              {t("order.voiceGuide")}
             </span>
             <span className="text-xs text-slate-600">
-              Speak naturally e.g. &ldquo;Do kilo chawal, ek kilo cheeni&rdquo; or &ldquo;Ek litre sarson tel&rdquo;
+              {language === "kn" && <>Speak naturally e.g. &ldquo;2 ಕೆಜಿ ಅಕ್ಕಿ, 1 ಕೆಜಿ ಸಕ್ಕರೆ&rdquo; or &ldquo;ಸ್ಟಾಕ್‌ಗೆ 10 ಕೆಜಿ ಅಕ್ಕಿ ಸೇರಿಸಿ&rdquo;</>}
+              {language === "hi" && <>Speak naturally e.g. &ldquo;2 kilo chawal, 1 kilo cheeni&rdquo; or &ldquo;Stock mein 10 kg chawal add karo&rdquo;</>}
+              {language === "en" && <>Speak naturally e.g. &ldquo;2 kg rice, 1 kg sugar&rdquo; or &ldquo;Add 10 kg rice to stock&rdquo;</>}
+              {language === "ta" && <>Speak naturally e.g. &ldquo;2 kg arisi, 1 kg chini&rdquo; or &ldquo;Stockil 10 kg arisi serka&rdquo;</>}
+              {language === "te" && <>Speak naturally e.g. &ldquo;2 kg biyyam, 1 kg chekkera&rdquo; or &ldquo;Stock lo 10 kg biyyam kalapandi&rdquo;</>}
+              {language === "mr" && <>Speak naturally e.g. &ldquo;2 kilo tandul, 1 kilo sakhar&rdquo; or &ldquo;Stock madhe 10 kilo tandul taka&rdquo;</>}
+              {language === "gu" && <>Speak naturally e.g. &ldquo;2 kilo chokha, 1 kilo khand&rdquo; or &ldquo;Stock ma 10 kilo chokha umelo&rdquo;</>}
+              {language === "bn" && <>Speak naturally e.g. &ldquo;2 kg chal, 1 kg chini&rdquo; or &ldquo;Stock-e 10 kg chal jog koro&rdquo;</>}
             </span>
+          </div>
+
+          {/* Language Selection on top of the mic */}
+          <div className="mb-4 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+              <Languages className="h-3.5 w-3.5 text-emerald-600" />
+              {t("order.language")}
+            </span>
+            <div className="flex flex-wrap justify-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-sm max-w-xl">
+              {[
+                { code: "kn", label: "ಕನ್ನಡ", name: "Kannada" },
+                { code: "hi", label: "हिंदी", name: "Hindi" },
+                { code: "en", label: "English", name: "English" },
+                { code: "ta", label: "தமிழ்", name: "Tamil" },
+                { code: "te", label: "తెలుగు", name: "Telugu" },
+                { code: "mr", label: "मराठी", name: "Marathi" },
+                { code: "gu", label: "ગુજરાતી", name: "Gujarati" },
+                { code: "bn", label: "বাংলা", name: "Bengali" },
+              ].map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setLanguage(l.code)}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                    language === l.code
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                  title={`${l.name} (${l.label})`}
+                >
+                  {l.label} ({l.name})
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Central Microphone Button (MediaRecorder) */}
@@ -163,7 +209,7 @@ export default function NewOrderPage() {
                 <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5 sm:mt-0" />
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-red-900">
-                    Voice Operation Notice
+                    {t("order.voiceOperationNotice")}
                   </p>
                   <p className="text-xs sm:text-sm text-red-700 mt-0.5">{errorMessage}</p>
                 </div>
@@ -175,7 +221,7 @@ export default function NewOrderPage() {
                 className="self-start sm:self-auto bg-white border-red-200 text-red-700 hover:bg-red-100 min-h-[36px]"
               >
                 <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                <span>Try Again</span>
+                <span>{t("common.retry")}</span>
               </Button>
             </div>
           )}
@@ -186,10 +232,10 @@ export default function NewOrderPage() {
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-amber-950">
-                  Low Stock Alert for Items in Bill
+                  {t("order.lowStockAlert")}
                 </p>
                 <p className="text-xs text-amber-800 mt-0.5">
-                  The following items are running low in stock:{" "}
+                  {t("order.lowStockDesc")}:{" "}
                   {lowStockWarnings
                     .map((item) => `${item.name || item.item_id} (${item.quantity ?? 0} left)`)
                     .join(", ")}
@@ -209,11 +255,11 @@ export default function NewOrderPage() {
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <ShoppingBag className="h-4 w-4 text-emerald-600" />
-                <span>Bill Items ({items.length})</span>
+                <span>{t("order.billItems")} ({items.length})</span>
               </h3>
               {hasUnsavedEdits && (
                 <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                  Local Edits Applied
+                  {t("order.localEditsApplied")}
                 </span>
               )}
             </div>
@@ -225,7 +271,7 @@ export default function NewOrderPage() {
                 className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 min-h-[36px] px-2"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Add More</span>
+                <span>{t("order.addMore")}</span>
               </button>
             )}
           </div>
@@ -233,9 +279,9 @@ export default function NewOrderPage() {
           {items.length === 0 ? (
             <EmptyState
               icon={ShoppingBag}
-              title="No items in this draft bill yet"
-              description="Tap the large microphone button above and speak your customer's items (e.g., '2 kg rice and 1 litre oil') or tap 'Add Item Manually'."
-              actionLabel="Add from Stock"
+              title={t("order.noItemsTitle")}
+              description={t("order.noItemsDesc")}
+              actionLabel={t("order.addFromStock")}
               onAction={() => setProductPickerOpen(true)}
             />
           ) : (

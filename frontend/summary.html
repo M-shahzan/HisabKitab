@@ -74,6 +74,72 @@
         </table>
       </div>
     </section>
+
+    <!-- Bills History Section -->
+    <section class="card" style="margin-top: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.4rem;" id="bills-history-title">Bills History</h2>
+        <button id="refresh-bills-btn" class="btn" style="padding: 6px 14px; font-size: 0.95rem; background-color: var(--surface-border); color: #fff;">Refresh</button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="bills-table">
+          <thead>
+            <tr>
+              <th>Bill #</th>
+              <th>Date & Time</th>
+              <th>Items</th>
+              <th style="text-align: right;">Total Amount</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="bills-table-body">
+            <!-- Populated dynamically via GET /bills -->
+          </tbody>
+        </table>
+      </div>
+      <div id="bills-empty-state" style="display: none; text-align: center; padding: 24px; color: #94a3b8;">
+        No bills recorded yet. Confirmed sales will appear here.
+      </div>
+    </section>
+
+    <!-- Bill Detail Modal -->
+    <div id="bill-detail-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 20px;">
+      <div style="background: #1e293b; border: 1px solid #334155; border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
+          <div>
+            <h3 id="modal-bill-title" style="font-size: 1.3rem; font-weight: 700; color: #f8fafc; margin: 0;">Bill Details</h3>
+            <p id="modal-bill-date" style="font-size: 0.85rem; color: #94a3b8; margin: 4px 0 0 0;"></p>
+          </div>
+          <button id="modal-close-btn" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; padding: 4px 8px;">✕</button>
+        </div>
+        <div style="overflow-x: auto; margin-bottom: 16px;">
+          <table style="width: 100%; text-align: left; border-collapse: collapse;">
+            <thead>
+              <tr style="border-bottom: 1px solid #334155; color: #94a3b8; font-size: 0.85rem;">
+                <th style="padding: 8px;">Product</th>
+                <th style="padding: 8px; text-align: right;">Quantity</th>
+                <th style="padding: 8px; text-align: right;">Unit Price</th>
+                <th style="padding: 8px; text-align: right;">Line Total</th>
+              </tr>
+            </thead>
+            <tbody id="modal-bill-items">
+              <!-- Populated dynamically via GET /bills/{id} -->
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #059669; font-weight: bold;">
+                <td colspan="3" style="padding: 12px 8px; font-size: 1.05rem; color: #f8fafc;">Grand Total</td>
+                <td id="modal-bill-grand-total" style="padding: 12px 8px; text-align: right; font-size: 1.2rem; color: #34d399;"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 16px;">
+          <button id="modal-back-btn" class="btn" style="background-color: #334155; color: #fff; padding: 8px 16px;">Back to History</button>
+          <button onclick="window.print()" class="btn" style="background-color: #059669; color: #fff; padding: 8px 16px;">Print Receipt</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="app.js"></script>

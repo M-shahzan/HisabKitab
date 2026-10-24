@@ -19,6 +19,8 @@ interface BillSummaryProps {
   disabled?: boolean;
 }
 
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 export function BillSummary({
   subtotal,
   total,
@@ -31,6 +33,7 @@ export function BillSummary({
   isSaving,
   disabled = false,
 }: BillSummaryProps) {
+  const { t, formatCurrency } = useLanguage();
   const [pulseHighlight, setPulseHighlight] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
@@ -59,7 +62,7 @@ export function BillSummary({
       {/* Payment Mode Selector */}
       <div>
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-          Payment Mode
+          {t("bill.paymentMode")}
         </label>
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -72,7 +75,7 @@ export function BillSummary({
             }`}
           >
             <Wallet className="h-4 w-4 text-emerald-600" />
-            <span>Cash</span>
+            <span>{t("bill.cash")}</span>
           </button>
 
           <button
@@ -85,7 +88,7 @@ export function BillSummary({
             }`}
           >
             <QrCode className="h-4 w-4 text-blue-600" />
-            <span>UPI / QR</span>
+            <span>{t("bill.upi")}</span>
           </button>
 
           <button
@@ -98,7 +101,7 @@ export function BillSummary({
             }`}
           >
             <BookOpen className="h-4 w-4 text-amber-600" />
-            <span>Khata</span>
+            <span>{t("bill.khata")}</span>
           </button>
         </div>
       </div>
@@ -106,16 +109,16 @@ export function BillSummary({
       {/* Bill Totals Breakdown */}
       <div className="space-y-2 border-t border-slate-100 pt-4 text-sm">
         <div className="flex justify-between text-slate-500">
-          <span>Items in cart:</span>
-          <span className="font-semibold text-slate-800">{itemCount} items</span>
+          <span>{t("bill.itemsInCart")}</span>
+          <span className="font-semibold text-slate-800">{itemCount} {t("bill.itemsCount")}</span>
         </div>
         <div className="flex justify-between text-slate-500">
-          <span>Subtotal:</span>
-          <span className="font-semibold text-slate-800 tabular-nums">{formatINR(subtotal)}</span>
+          <span>{t("bill.subtotal")}</span>
+          <span className="font-semibold text-slate-800 tabular-nums">{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between text-slate-500 text-xs">
-          <span>Taxes:</span>
-          <span className="text-slate-600">Included in price</span>
+          <span>{t("bill.taxes")}</span>
+          <span className="text-slate-600">{t("bill.taxesIncluded")}</span>
         </div>
 
         {/* Final Grand Total */}
@@ -126,9 +129,9 @@ export function BillSummary({
             pulseHighlight ? "bg-emerald-100/60" : "bg-emerald-50/50"
           }`}
         >
-          <span className="text-base font-extrabold text-slate-900">Total Bill:</span>
+          <span className="text-base font-extrabold text-slate-900">{t("bill.totalBill")}</span>
           <span className="text-2xl sm:text-3xl font-extrabold text-emerald-800 tabular-nums">
-            {formatINR(total)}
+            {formatCurrency(total)}
           </span>
         </motion.div>
       </div>
@@ -144,7 +147,7 @@ export function BillSummary({
           className="w-full text-base font-extrabold shadow-glow bg-emerald-600 hover:bg-emerald-700 h-13 min-h-[48px]"
         >
           <CheckCircle2 className="h-5 w-5 mr-2" />
-          <span>Confirm Sale</span>
+          <span>{t("bill.confirmSale")}</span>
         </Button>
 
         <div className="flex gap-2">
@@ -157,7 +160,7 @@ export function BillSummary({
             className="flex-1 min-h-[44px]"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            <span>Add Item</span>
+            <span>{t("bill.addItem")}</span>
           </Button>
 
           <Button
@@ -175,12 +178,12 @@ export function BillSummary({
             {showCancelConfirm ? (
               <span className="font-bold flex items-center gap-1 text-xs">
                 <AlertTriangle className="h-3.5 w-3.5" />
-                Sure to cancel?
+                {t("bill.sureToCancel")}
               </span>
             ) : (
               <span className="flex items-center gap-1 text-xs font-semibold">
                 <XCircle className="h-4 w-4" />
-                Cancel Sale
+                {t("bill.cancelSale")}
               </span>
             )}
           </Button>

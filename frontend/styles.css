@@ -233,6 +233,11 @@ select {
   font-weight: 600;
 }
 
+.bill-badge.badge-confirmed {
+  background-color: #059669;
+  color: white;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
