@@ -52,3 +52,49 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Dedicated print stylesheet for store receipts */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide navigation, page chrome, and non-printable buttons */
+  header,
+  nav,
+  aside,
+  footer,
+  .no-print,
+  button:not(.force-print),
+  input,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Thermal POS receipt print layout */
+  .printable-receipt-card {
+    display: block !important;
+    max-width: 80mm !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 6mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+  }
+
+  /* Force borders to print crisp black */
+  .printable-receipt-card * {
+    border-color: #000000 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+

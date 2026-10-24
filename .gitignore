@@ -9,4 +9,5 @@ node_modules/
 tests/audio/*
 !tests/audio/.gitkeep
 .next/
+frontend/.next/
 *.tsbuildinfo

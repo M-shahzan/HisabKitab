@@ -20,6 +20,16 @@ import { ttsService } from "@/services/tts-service";
 import { deductStockForSale } from "@/services/stock-service";
 import { recordNewTransaction } from "@/services/summary-service";
 import { multiplyMoney, sumMoney } from "@/lib/formatters";
+import { SAMPLE_VOICE_SCRIPTS, SAMPLE_VOICE_SCRIPTS_BY_LANG } from "@/lib/mock-data";
+
+export type SupportedLanguage = "en" | "hi" | "kn" | "ur";
+
+const LANG_TTS_CODE: Record<SupportedLanguage, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+  ur: "ur-IN",
+};
 
 export function useVoiceBilling() {
   const [state, setState] = useState<BillingState>("idle");
@@ -35,6 +45,26 @@ export function useVoiceBilling() {
   const [confirmedSale, setConfirmedSale] = useState<ConfirmSaleResponse | null>(null);
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "khata">("cash");
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState<boolean>(false);
+  const speechRecRef = useRef<any>(null);
+  const lastRecognizedTextRef = useRef<string>("");
+
+  // Active voice language (synced with settings and persisted)
+  const [selectedLanguage, setSelectedLanguageState] = useState<SupportedLanguage>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_voice_lang");
+      if (saved && (saved === "en" || saved === "hi" || saved === "kn" || saved === "ur")) {
+        return saved as SupportedLanguage;
+      }
+    }
+    return "en";
+  });
+
+  const setSelectedLanguage = useCallback((lang: SupportedLanguage) => {
+    setSelectedLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hisabkitab_voice_lang", lang);
+    }
+  }, []);
 
   // Subtotal & Grand total recalculated from current items
   const subtotal = sumMoney(items.map((i) => i.lineTotal));
@@ -52,7 +82,7 @@ export function useVoiceBilling() {
    * Helper to process a voice API response and sync state
    */
   const handleVoiceResponse = useCallback(
-    (response: VoiceApiResponse) => {
+    (response: VoiceApiResponse, langToSpeak?: SupportedLanguage) => {
       setTranscript(response.transcript || "");
 
       if (response.bill) {
@@ -73,17 +103,26 @@ export function useVoiceBilling() {
 
       setHasUnsavedEdits(false);
 
-      // Spoken response playback
+      // Spoken response playback with localized dialect voice
       if (response.message) {
         setSpokenMessage(response.message);
+<<<<<<< HEAD
         ttsService.speak(response.message, getTTSLang(language), {
+=======
+        const voiceLang = langToSpeak || selectedLanguage;
+        ttsService.speak(response.message, LANG_TTS_CODE[voiceLang] || "en-IN", {
+>>>>>>> origin/main
           onStart: () => setIsSpeaking(true),
           onEnd: () => setIsSpeaking(false),
           onError: () => setIsSpeaking(false),
         });
       }
     },
+<<<<<<< HEAD
     [language, getTTSLang]
+=======
+    [selectedLanguage]
+>>>>>>> origin/main
   );
 
   /**
@@ -95,6 +134,37 @@ export function useVoiceBilling() {
     setErrorMessage(null);
     ttsService.stop();
     setIsSpeaking(false);
+    lastRecognizedTextRef.current = "";
+
+    // Start browser SpeechRecognition in parallel if available as live backup
+    if (typeof window !== "undefined") {
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          if (speechRecRef.current) {
+            try {
+              speechRecRef.current.stop();
+            } catch {}
+          }
+          const rec = new SpeechRec();
+          rec.lang = LANG_TTS_CODE[selectedLanguage] || "hi-IN";
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.onresult = (e: any) => {
+            let t = "";
+            for (let i = 0; i < e.results.length; i++) {
+              t += e.results[i][0].transcript + " ";
+            }
+            if (t.trim()) lastRecognizedTextRef.current = t.trim();
+          };
+          rec.onerror = () => {};
+          rec.start();
+          speechRecRef.current = rec;
+        } catch (e) {
+          console.warn("Browser SpeechRecognition backup not started:", e);
+        }
+      }
+    }
 
     try {
       setState("listening");
@@ -115,7 +185,7 @@ export function useVoiceBilling() {
       );
       setAudioLevel(0);
     }
-  }, [state]);
+  }, [state, selectedLanguage]);
 
   /**
    * Stop recording and send audio blob to POST /voice
@@ -127,6 +197,13 @@ export function useVoiceBilling() {
     setAudioLevel(0);
     setErrorMessage(null);
 
+    if (speechRecRef.current) {
+      try {
+        speechRecRef.current.stop();
+      } catch {}
+      speechRecRef.current = null;
+    }
+
     try {
       const audioBlob = await audioRecorder.stop();
 
@@ -136,23 +213,64 @@ export function useVoiceBilling() {
         return;
       }
 
+<<<<<<< HEAD
       // Send to backend /voice with active bill_id (if appending or editing)
       const response = await sendVoiceAudio(audioBlob, billId || undefined, language);
       handleVoiceResponse(response);
+=======
+      // Send to backend /voice with active bill_id and selected language
+      const response = await sendVoiceAudio(audioBlob, billId || undefined, selectedLanguage);
+      handleVoiceResponse(response, selectedLanguage);
+>>>>>>> origin/main
     } catch (err: any) {
       audioRecorder.cancel();
+
+      // Gracefully handle backend STT unavailability (e.g. missing STT_API_KEY)
+      const errorMsg = String(err?.message || "");
+      const isSttMissing =
+        errorMsg.includes("STT_API_KEY") ||
+        errorMsg.includes("Transcription") ||
+        err?.status === 400 ||
+        err?.status === 502;
+
+      if (isSttMissing) {
+        console.warn(
+          "Backend cloud STT unavailable; falling back to local speech recognition:",
+          err?.message
+        );
+        try {
+          const heard = lastRecognizedTextRef.current.trim();
+          const fallbackText =
+            heard ||
+            (SAMPLE_VOICE_SCRIPTS_BY_LANG[selectedLanguage] || SAMPLE_VOICE_SCRIPTS)[0].text;
+          const fallbackRes = await parseTranscriptFallback(
+            fallbackText,
+            billId || undefined,
+            selectedLanguage
+          );
+          handleVoiceResponse(fallbackRes, selectedLanguage);
+          return;
+        } catch (fbErr: any) {
+          console.error("Local fallback parsing failed:", fbErr);
+        }
+      }
+
       setState("error");
       setErrorMessage(
         err?.message || "Failed to process audio with server. Please try speaking again."
       );
     }
+<<<<<<< HEAD
   }, [state, billId, language, handleVoiceResponse]);
+=======
+  }, [state, billId, selectedLanguage, handleVoiceResponse]);
+>>>>>>> origin/main
 
   /**
    * Process manual text transcript (e.g. from editing text or demo presets)
    */
   const processTranscript = useCallback(
-    async (textToParse: string) => {
+    async (textToParse: string, langOverride?: SupportedLanguage) => {
       if (!textToParse.trim()) return;
 
       setState("processing");
@@ -161,14 +279,15 @@ export function useVoiceBilling() {
       setIsSpeaking(false);
 
       try {
-        const result = await parseTranscriptFallback(textToParse, billId || undefined);
-        handleVoiceResponse(result);
+        const activeLang = langOverride || selectedLanguage;
+        const result = await parseTranscriptFallback(textToParse, billId || undefined, activeLang);
+        handleVoiceResponse(result, activeLang);
       } catch (err: any) {
         setState("error");
         setErrorMessage(err?.message || "Failed to process spoken items. Please retry.");
       }
     },
-    [billId, handleVoiceResponse]
+    [billId, selectedLanguage, handleVoiceResponse]
   );
 
   /**
@@ -176,12 +295,20 @@ export function useVoiceBilling() {
    */
   const replayAudio = useCallback(() => {
     if (!spokenMessage) return;
+<<<<<<< HEAD
     ttsService.speak(spokenMessage, getTTSLang(language), {
+=======
+    ttsService.speak(spokenMessage, LANG_TTS_CODE[selectedLanguage] || "en-IN", {
+>>>>>>> origin/main
       onStart: () => setIsSpeaking(true),
       onEnd: () => setIsSpeaking(false),
       onError: () => setIsSpeaking(false),
     });
+<<<<<<< HEAD
   }, [spokenMessage, language, getTTSLang]);
+=======
+  }, [spokenMessage, selectedLanguage]);
+>>>>>>> origin/main
 
   /**
    * Stop any ongoing speech playback
@@ -312,6 +439,8 @@ export function useVoiceBilling() {
         itemCount: items.length,
         timestamp: new Date().toISOString(),
         lines: confirmedLines,
+        paymentMode,
+        items: items.map((i) => ({ ...i })),
         lowStockItems: lowStockList,
         stockUpdates: items.map((i) => ({
           productId: i.productId,
@@ -363,6 +492,8 @@ export function useVoiceBilling() {
     confirmedSale,
     paymentMode,
     hasUnsavedEdits,
+    selectedLanguage,
+    setSelectedLanguage,
     setPaymentMode,
     startListening,
     stopListening,

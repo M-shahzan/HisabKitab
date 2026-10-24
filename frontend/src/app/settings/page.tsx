@@ -21,26 +21,77 @@ import { SupportedLanguage } from "@/lib/i18n/translations";
 export default function SettingsPage() {
   const { language, setLanguage, t } = useLanguage();
 
-  const [shopName, setShopName] = useState("Gupta Kirana & General Store");
-  const [ownerName, setOwnerName] = useState("Rajesh Gupta");
-  const [phone, setPhone] = useState("+91 98450 12345");
-  const [gstin, setGstin] = useState("29ABCDE1234F1Z5");
-  const [city, setCity] = useState("Bengaluru, Karnataka");
+  const [shopName, setShopName] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_shop_profile");
+      if (saved) {
+        try { return JSON.parse(saved).shopName || "Gupta Kirana & General Store"; } catch {}
+      }
+    }
+    return "Gupta Kirana & General Store";
+  });
+  const [ownerName, setOwnerName] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_shop_profile");
+      if (saved) {
+        try { return JSON.parse(saved).ownerName || "Rajesh Gupta"; } catch {}
+      }
+    }
+    return "Rajesh Gupta";
+  });
+  const [phone, setPhone] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_shop_profile");
+      if (saved) {
+        try { return JSON.parse(saved).phone || "+91 98450 12345"; } catch {}
+      }
+    }
+    return "+91 98450 12345";
+  });
+  const [gstin, setGstin] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_shop_profile");
+      if (saved) {
+        try { return JSON.parse(saved).gstin || "29ABCDE1234F1Z5"; } catch {}
+      }
+    }
+    return "29ABCDE1234F1Z5";
+  });
+  const [city, setCity] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("hisabkitab_shop_profile");
+      if (saved) {
+        try { return JSON.parse(saved).city || "Bengaluru, Karnataka"; } catch {}
+      }
+    }
+    return "Bengaluru, Karnataka";
+  });
 
+  const [currency, setCurrency] = useState("INR");
   const [autoReparse, setAutoReparse] = useState(true);
   const [soundFeedback, setSoundFeedback] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
-
   const handleLangChange = (lang: SupportedLanguage) => {
     setLanguage(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hisabkitab_voice_lang", lang);
+    }
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 2500);
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined") {
+      localStorage.setItem("hisabkitab_voice_lang", language);
+      localStorage.setItem(
+        "hisabkitab_shop_profile",
+        JSON.stringify({ shopName, ownerName, phone, gstin, city })
+      );
+    }
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   return (
